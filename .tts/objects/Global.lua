@@ -90,14 +90,11 @@ function onLoad()
             setupCount = setupCount+1
         end
     end
-    timerID = self.getGUID()..math.random(9999999999999)
+    
     --Sets position/color for the button, spawns it
     --Start timer which repeats forever, running countItems() every second
-    Timer.create({
-        identifier=timerID,
-        function_name="countItems", function_owner=self,
-        repetitions=0, delay=0.5
-    })
+    Wait.time(countItems, 0.5, -1)
+
     score = {}
     numberSum = {}
     plusSum = {}

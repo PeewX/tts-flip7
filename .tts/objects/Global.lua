@@ -13,9 +13,9 @@ function onLoad()
         click_function = "startgame",
         function_owner = self,
         label          = "Reset",
-        position       = {0/Scale.x, 0.5, 0},
+        position       = {0, 0.5, 0},
         rotation       = {0, 180, 0},
-        scale          = {0.4/Scale.x, 1, 0.4},
+        scale          = {0.4/Scale.x, 1, 0.4/Scale.z},
         width          = 1200*Bound.size.x,
         height         = 800*Bound.size.z,
         color          = "White",
@@ -211,86 +211,16 @@ function getScore(zone)
     return score
 end
 
-function bust(object, color, alt)
-    if alt then return false end
-
-    -- Player reference position and rotation
-    local handTransform = Player[color].getHandTransform()
-
-    -- Rotation angle (forward relative to the player)
-    local angleY = math.rad(handTransform.rotation.y)
-    local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
-    local center = handTransform.position + forward * 14
-
-    local spacingX = 3
-    local offsetZ_up = 2
-    local offsetZ_down = -2
-
-    -- First row
-    for i = -1, 1 do
-        local localOffset = rotateOffset(spacingX * i, offsetZ_up, angleY)
-        local origin = center + localOffset
-        local hitList = Physics.cast({
-            origin       = origin + Vector(0, -3, 0),
-            direction    = {0, -1, 0},
-            type         = 3,
-            size         = {1, 1, 1},
-            orientation  = {0, 0, 0},
-            max_distance = 3,
-            debug        = false,
-        })
-    
-        for _, v in pairs(hitList) do 
-            if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                v.hit_object.setPosition({2.06, 1.49, 1.07})
-                v.hit_object.setRotation({0, 180, 0})
+function bust(o, c, a)
+    for _, playerScriptZone in pairs(getObjects()) do
+        if playerScriptZone.getGMNotes() == c then
+            for _, v in pairs(playerScriptZone.getObjects()) do
+                if v.type == "Deck" or v.type == "Card" then
+                    v.setPosition({2.06, 2, 1.07})
+                    v.setRotation({0, 180, 0})
+                end
             end
-        end
-    end
-
-    -- Second row
-    for i = -2, 1 do
-        local x = spacingX * i + spacingX / 2
-        local localOffset = rotateOffset(x, offsetZ_down, angleY)
-        local origin = center + localOffset
-        local hitList2 = Physics.cast({
-            origin       = origin + Vector(0, -3, 0),
-            direction    = {0, -1, 0},
-            type         = 3,
-            size         = {1, 1, 1},
-            orientation  = {0, 0, 0},
-            max_distance = 3,
-            debug        = false,
-        })
-
-        for _, v in pairs(hitList2) do 
-            if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                v.hit_object.setPosition({2.06, 1.49, 1.07})
-                v.hit_object.setRotation({0, 180, 0})
-            end
-        end
-    end
-
-    -- Third row
-    for i = -2, 2 do  -- 5개 칸 (i = -2, -1, 0, 1, 2)
-        local x = spacingX * i  -- x 값 조정: 좌우 간격 유지
-        local localOffset = rotateOffset(x, offsetZ_down, angleY)
-        local origin = handTransform.position + forward * 9 + localOffset
-        local hitList3 = Physics.cast({
-            origin       = origin + Vector(0, -3, 0),
-            direction    = {0, -1, 0},
-            type         = 3,
-            size         = {1, 1, 1},
-            orientation  = {0, 0, 0},
-            max_distance = 3,
-            debug        = false,
-        })
-    
-        for _, v in pairs(hitList3) do 
-            if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                v.hit_object.setPosition({2.06, 1.49, 1.07})
-                v.hit_object.setRotation({0, 180, 0})
-            end
+            break
         end
     end
 end

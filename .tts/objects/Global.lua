@@ -206,7 +206,7 @@ function getScore(zone)
     for _, object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
         if object.hasTag("mult") then
             local description = object.getDescription() -- get the description
-            mult = tonumber(description)  -- convert it to a number
+            mult = tonumber(description) or 0 -- convert it to a number
         end
     end
 
@@ -492,7 +492,7 @@ function CreateScoreBoard()
     local xml = [[
     <Panel id="scoreHUD"
        width="260"
-       height="30"
+       height="20"
 
        anchorMin="1 0.5"
        anchorMax="1 0.5"
@@ -512,7 +512,7 @@ function CreateScoreBoard()
 end
 
 function getTotalScore(color)
-    for _,v in ipairs(getObjects()) do
+    for _, v in ipairs(getObjects()) do
         if v.hasTag("score") and v.hasTag(color) then
             local inputs = v.getInputs()
             if inputs[1] then
@@ -525,15 +525,18 @@ end
 
 function UpdateScoreBoard()
     local txt = ""
-   for i, color in ipairs(PLAYER_COLORS) do
+    local seatedPlayers = 0
+    for i, color in ipairs(PLAYER_COLORS) do
         if Player[color].seated then 
         local roundScore = score[i] or 0
         local totalScore = getTotalScore(color)
         local playerName = Player[color].steam_name
         local newScore = totalScore + roundScore
         txt = ("%s%s: %d | %d (%d)\n"):format(txt, playerName, roundScore, totalScore, newScore)
+        seatedPlayers = seatedPlayers + 1
        end
     end
 
+    UI.setAttribute("scoreHUD", "height", seatedPlayers * 20) -- default line height: 20px
     UI.setValue("scoreList", txt)
 end

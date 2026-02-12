@@ -365,6 +365,8 @@ for i, v in ipairs(getSeatedPlayers()) do
 end
 
 function stay(o,c,a)
+    if hasBeenPewd then return false end
+
     bust(o,c,a)
     for i,v in ipairs(getObjects()) do
         if v.getGMNotes()== c then
@@ -390,12 +392,8 @@ function wait(time)
     until os.time() > start + time
   end
 
-function hit(o,c,a)
-    Pcolor=c
-    startLuaCoroutine(Global, "hit2")
-end
-
-function hit2()
+function hit(o, Pcolor, a)
+    if hasBeenPewd then return false end
 
     local count = 0
 

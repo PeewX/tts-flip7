@@ -5,11 +5,11 @@ function onLoad()
 
     Scale = StartBtn.getScale()
     Bound = StartBtn.getBoundsNormalized()
-    --[[
+
     StartBtn.createButton({
         click_function = "startgame",
         function_owner = self,
-        label          = "New Round",
+        label          = "Reset",
         position       = {0/Scale.x,0.5,0/Scale.z},
         rotation       = {0,180,0},
         scale          = {0.4/Scale.x,1,0.4/Scale.z},
@@ -19,7 +19,7 @@ function onLoad()
         font_color     = "Black",
         font_size      = 700*Bound.size.z
     })
-    ]]--
+
     HitBtn.createButton({
         click_function = "hit",
         function_owner = self,
@@ -296,13 +296,21 @@ local function rotateOffset(x, z)
 end
 
 function startgame()
+	-- reset points
+	for _, v in pairs(getObjects()) do
+        if v.hasTag("score") then
+            v.editInput({
+                index          = 0,
+                value          = 0,
+            })
+        end
+    end
+
     local deck2 = scan2()
-    local posCount = 0.1
-    for i,v in ipairs(getObjects()) do
+    for _, v in pairs(getObjects()) do
         if v ~= deck2 and (v.type=="Deck" or v.type=="Card") then
-            v.setPosition({2.06, 1.49+posCount, 1.07})
-            v.setRotation({0,180,0})
-            posCount = posCount + 0.1
+            v.setPosition({-1.60, 2.3, 1.13})
+            v.setRotation({0,180,180})
         end
     end
 

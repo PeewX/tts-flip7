@@ -118,10 +118,11 @@ function countItems()
 
     for i, v in ipairs(scriptzone) do
 		local seenNumbers = {}
-        local objects = v.getObjects() -- get objects already in the zone
-        for key,object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
-            if object.hasTag("number") then
-                local description = object.getDescription() -- get the description
+        local scriptZoneObjects = v.getObjects() -- get objects already in the zone
+
+        for _, scriptZoneObject in pairs(scriptZoneObjects) do -- key = 1|2|3|etc, object = actual TTS object
+            if scriptZoneObject.hasTag("number") then
+                local description = scriptZoneObject.getDescription() -- get the description
                 local number = tonumber(description)  -- convert it to a number
                 if(number ~= nil) then -- check if you actually get a number (tonumber returns nil if it isn't)
 					if not seenNumbers[number] then
@@ -130,20 +131,22 @@ function countItems()
 					else
 						hasDuplicateNumber = true
 						if not hasBeenPewd then
-							broadcastToAll("YouGotPewd!", {1, 0, 0})
+                            local player = Player[v.getGMNotes()]
+                            local broadcastMessage = ("%s got pewd!"):format(player.steam_name)
+							broadcastToAll(broadcastMessage, player.color)
 							hasBeenPewd = true
 						end
 					end
                 end
-                countNumbercard[i] = countNumbercard[i] +1
+                countNumbercard[i] = countNumbercard[i] + 1
 
-            elseif object.hasTag("plus") then
-                local description = object.getDescription() -- get the description
+            elseif scriptZoneObject.hasTag("plus") then
+                local description = scriptZoneObject.getDescription() -- get the description
                 local plus = tonumber(description)  -- convert it to a number
                 plusSum[i] = plusSum[i] + plus
 
-            elseif object.hasTag("mult") then
-                local description = object.getDescription() -- get the description
+            elseif scriptZoneObject.hasTag("mult") then
+                local description = scriptZoneObject.getDescription() -- get the description
                 mult[i] = tonumber(description)  -- convert it to a number
             end
         end
@@ -215,12 +218,12 @@ function getScore(zone)
     return score
 end
 
-function bust(o, c, a)
-    for _, playerScriptZone in pairs(getObjects()) do
-        if playerScriptZone.getGMNotes() == c then
-            for _, v in pairs(playerScriptZone.getObjects()) do
+function bust(object, color, alt)
+    for _, scriptZoneObject in pairs(scriptzone) do
+        if scriptZoneObject.getGMNotes() == color then
+            for _, v in pairs(scriptZoneObject.getObjects()) do
                 if v.type == "Deck" or v.type == "Card" then
-                    v.setPosition({2.06, 2, 1.07})
+                    v.setPosition({2.06, 2.3, 1.07})
                     v.setRotation({0, 180, 0})
                 end
             end
@@ -234,25 +237,22 @@ function startgame()
 	for _, v in pairs(getObjects()) do
         if v.hasTag("score") then
             v.editInput({
-                index          = 0,
-                value          = 0,
+                index = 0,
+                value = 0,
             })
         end
     end
 
-    local deck2 = scan2()
+    -- put all cards back
+    local drawDeck = scan2()
     for _, v in pairs(getObjects()) do
-        if v ~= deck2 and (v.type == "Deck" or v.type == "Card") then
+        if v ~= drawDeck and (v.type == "Deck" or v.type == "Card") then
             v.setPosition({-1.60, 2.3, 1.13})
             v.setRotation({0, 180, 180})
         end
     end
 
-    if deck2 == nil or (deck2.getQuantity() <= #getSeatedPlayers()) then
-        return
-    end
-
-    deck2.shuffle()
+    drawDeck.shuffle()
 end
 
 function stay(object, color, alt)
@@ -261,7 +261,7 @@ function stay(object, color, alt)
 
     bust(_, color) -- Call bust function to reset player cards
 
-    local Playerscore = 0    
+    local Playerscore = 0
     for _, v in pairs(getObjects()) do
         if v.getGMNotes() == color then
            Playerscore = getScore(v)
@@ -448,7 +448,7 @@ end
 function scan()
     isempty = true
     deckscan = Physics.cast({
-        origin       = {-2,2,1},
+        origin       = {-2, 2, 1},
         direction    = {0, -1, 0},
         type         = 3,
         size         = {1, 1, 1},
@@ -458,7 +458,7 @@ function scan()
     })
 
     for _,v in ipairs(deckscan) do
-        if v.hit_object.type == "Deck"  then
+        if v.hit_object.type == "Deck" then
             isempty = false
 
             return v.hit_object.takeObject()

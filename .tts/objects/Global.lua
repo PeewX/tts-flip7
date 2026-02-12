@@ -100,6 +100,7 @@ function onLoad()
     plusSum = {}
     mult = {}
     countNumbercard = {}
+    hasBeenPewd = false
 end
 
 function countItems()
@@ -110,40 +111,50 @@ function countItems()
         mult[i] = 1
         countNumbercard[i] = 0
     end
+	local hasDuplicateNumber = false
     for i, v in ipairs(scriptzone) do
+		local seenNumbers = {}
         local objects = v.getObjects() -- get objects already in the zone
         for key,object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
             if object.hasTag("number") then
                 local description = object.getDescription() -- get the description
                 local number = tonumber(description)  -- convert it to a number
                 if(number ~= nil) then -- check if you actually get a number (tonumber returns nil if it isn't)
-                    numberSum[i] = numberSum[i] + number
+					if not seenNumbers[number] then
+						seenNumbers[number] = true
+						numberSum[i] = numberSum[i] + number
+					else
+						hasDuplicateNumber = true
+						if not hasBeenPewd then
+							broadcastToAll("YouGotPewd!", {1, 0, 0})
+							hasBeenPewd = true
+						end
+					end
                 end
                 countNumbercard[i] = countNumbercard[i] +1
-            end
-        end
-    
-        for key,object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
-            if object.hasTag("plus") then
+
+            elseif object.hasTag("plus") then
                 local description = object.getDescription() -- get the description
                 local plus = tonumber(description)  -- convert it to a number
                 plusSum[i] = plusSum[i] + plus
-            end
-        end
-    
-        for key,object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
-            if object.hasTag("mult") then
+
+            elseif object.hasTag("mult") then
                 local description = object.getDescription() -- get the description
                 mult[i] = tonumber(description)  -- convert it to a number
             end
         end
-    
+
         score[i] = numberSum[i]*mult[i]+plusSum[i]
         if countNumbercard[i] == 7 then
             score[i] = score[i] +15
         end
+
         v.editButton({label = score[i]})
     end
+	
+	if not hasDuplicateNumber then
+		hasBeenPewd = false
+	end
 end
 
 

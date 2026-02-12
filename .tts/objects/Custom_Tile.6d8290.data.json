@@ -1,0 +1,61 @@
+{
+  "GUID": "6d8290",
+  "Name": "Custom_Tile",
+  "Transform": {
+    "posX": -22.2894535,
+    "posY": 1.50604737,
+    "posZ": -22.194912,
+    "rotX": 359.955444,
+    "rotY": 225.000381,
+    "rotZ": 0.068411,
+    "scaleX": 1.3598398,
+    "scaleY": 1,
+    "scaleZ": 1.3598398
+  },
+  "Nickname": "",
+  "Description": "",
+  "GMNotes": "",
+  "AltLookAngle": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "ColorDiffuse": {
+    "r": 0.8710801,
+    "g": 0.8710801,
+    "b": 0.8710801
+  },
+  "Tags": [
+    "score",
+    "Yellow"
+  ],
+  "LayoutGroupSortIndex": 0,
+  "Value": 0,
+  "Locked": true,
+  "Grid": true,
+  "Snap": true,
+  "IgnoreFoW": false,
+  "MeasureMovement": false,
+  "DragSelectable": true,
+  "Autoraise": true,
+  "Sticky": true,
+  "Tooltip": true,
+  "GridProjection": false,
+  "HideWhenFaceDown": false,
+  "Hands": false,
+  "CustomImage": {
+    "ImageURL": "https://steamusercontent-a.akamaihd.net/ugc/2383055195966601919/D818D6B21F64EE6702A21323E2C0F1AAC91BFFDB/",
+    "ImageSecondaryURL": "",
+    "ImageScalar": 1,
+    "WidthScale": 0,
+    "CustomTile": {
+      "Type": 3,
+      "Thickness": 0.1,
+      "Stackable": false,
+      "Stretch": true
+    }
+  },
+  "LuaScript": "local inputValue = \"\"\n\nfunction onLoad(saved_data)\n    if saved_data ~= \"\" then\n        local data = JSON.decode(saved_data)\n        inputValue = data.inputValue or \"\"\n    end\n\n    createInputField()\nend\n\nfunction createInputField()\n    self.clearInputs()\n\n    self.createInput({\n        input_function = \"onInputChanged\",\n        function_owner = self,\n\n        value      = inputValue,\n        alignment  = 3,\n        position   = {0, 0.3, 0},\n        width      = 800,\n        height     = 600,\n        rotation   = {0, 0, 0},\n        font_size  = 400,\n        scale      = {1, 1, 1},\n        font_color = {0,0,0,99},\n        color      = {1,1,1,0},\n        tab        = 2\n    })\nend\n\nfunction onInputChanged(obj, ply, value, selected)\n    inputValue = value\n    saveData()\nend\n\nfunction saveData()\n    self.script_state = JSON.encode({\n        inputValue = inputValue\n    })\nend",
+  "LuaScriptState": "{\"inputValue\":\"0\"}",
+  "XmlUI": ""
+}

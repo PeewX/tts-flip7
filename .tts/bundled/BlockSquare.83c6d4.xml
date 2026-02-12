@@ -1,0 +1,50 @@
+<Panel
+		id = "panel1"
+		active = "false"
+        color="Grey"
+		textColor = "White"
+		position = "0 0 -2000"
+		width = "200"
+		height = "150"
+		scale = "0.5 1 1"
+		offsetXY = "-700 1500"
+        allowDragging="true"
+        returnToOriginalPositionWhenReleased="false"
+        restrictDraggingToParentBounds="false"
+>
+	<Text
+	text = "Drag"
+	fontSize = "70"
+	></Text>
+	<Button
+	onClick = "Apply"
+	text = "Apply"
+	fontSize = "70"
+	color = "#1e81b0"
+	offsetXY = "900 0"
+	>
+	</Button>
+<VerticalScrollView
+id = "scroll1"
+rotation = "0 0 0"
+position = "0 0 0"
+ 	height="3000"
+ 	width="2000"
+	offsetXY = "0 -1600"
+
+>
+<InputField
+ 	text = "Enter text..." 
+	lineType="MultiLineNewline"
+ 	height="60000"
+ 	width="4000"
+ 	textColor="#a4d9fa"
+ 	offsetXY = "0 0"
+ 	color="#1f1f1f"
+	 fontSize = "50"
+ 	id="input1"
+	onValueChanged = "typing"
+	onEndEdit = "typing"
+ />
+</VerticalScrollView>
+</Panel>

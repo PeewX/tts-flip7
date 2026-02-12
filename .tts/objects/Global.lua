@@ -101,6 +101,8 @@ function onLoad()
     mult = {}
     countNumbercard = {}
     hasBeenPewd = false
+
+    CreateScoreBoard()
 end
 
 function countItems()
@@ -157,6 +159,8 @@ function countItems()
 	if not hasDuplicateNumber then
 		hasBeenPewd = false
 	end
+
+    UpdateScoreBoard()
 end
 
 
@@ -482,4 +486,54 @@ function scan2()
             return v.hit_object
         end
     end
+end
+
+function CreateScoreBoard()
+    local xml = [[
+    <Panel id="scoreHUD"
+       width="260"
+       height="30"
+
+       anchorMin="1 0.5"
+       anchorMax="1 0.5"
+       rectAlignment="MiddleRight"
+
+       offsetXY="-10 0"
+
+       allowDragging="true"
+       color="#000000AA"
+       padding="1"
+       autoLayout="Vertical">
+
+        <Text id="scoreList" text="" fontSize="16" color="#FFFFFF" alignment="UpperLeft"/>
+    </Panel>
+    ]]
+    UI.setXml(xml)
+end
+
+function getTotalScore(color)
+    for _,v in ipairs(getObjects()) do
+        if v.hasTag("score") and v.hasTag(color) then
+            local inputs = v.getInputs()
+            if inputs[1] then
+                return tonumber(inputs[1].value) or 0
+            end
+        end
+    end
+    return 0
+end
+
+function UpdateScoreBoard()
+    local txt = ""
+   for i, color in ipairs(PLAYER_COLORS) do
+        if Player[color].seated then 
+        local roundScore = score[i] or 0
+        local totalScore = getTotalScore(color)
+        local playerName = Player[color].steam_name
+        local newScore = totalScore + roundScore
+        txt = ("%s%s: %d | %d (%d)\n"):format(txt, playerName, roundScore, totalScore, newScore)
+       end
+    end
+
+    UI.setValue("scoreList", txt)
 end

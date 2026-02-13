@@ -1,5 +1,6 @@
 -- Globals
 PLAYER_COLORS = {"Yellow", "Red", "White", "Orange", "Blue", "Pink", "Green", "Purple"}
+PlayerData = {}
 
 function onLoad()
     StartBtn = getObjectFromGUID("5324c0")
@@ -74,6 +75,10 @@ function onLoad()
         font_size      = 700
     })
 
+    for _, v in pairs(PLAYER_COLORS) do
+        PlayerData[v] = {}
+    end
+
     scriptzone = {}
     for _, v in pairs(getObjects()) do
         if v.type == "Scripting" then
@@ -91,7 +96,7 @@ function onLoad()
                 color          = "White",
                 font_color     = "Grey",
             })
-
+            PlayerData[v.getGMNotes()].scriptZone = v
         end
     end
 
@@ -216,9 +221,9 @@ function startgame()
         })
     else
         NewroundBtn.createButton({
-            click_function = "resetGame",
+            click_function = "newround",
             function_owner = self,
-            label          = "Reset",
+            label          = "New Round",
             position       = {0, 0.5, 0},
             rotation       = {0, 180, 0},
             scale          = {1/Scale.x, 1, 1/Scale.z},
@@ -230,9 +235,26 @@ function startgame()
             tooltip        = "Calculate the scores and start the next round."
         })
     end
+
+    NewroundBtn.createButton({
+        click_function = "resetGame",
+        function_owner = self,
+        label          = "Reset Game",
+        position       = {-7, -2, -23.25},
+        rotation       = {0, 180, 0},
+        scale          = {1/Scale.x, 1, 1/Scale.z},
+        width          = 4000,
+        height         = 1000,
+        color          = "White",
+        font_color     = "Black",
+        font_size      = 700,
+        tooltip        = "Reset all player points and cards"
+    })
 end
 
-function resetGame()
+function resetGame(_, color, _)
+    if not (Player[color].host or Player[color].promoted) then return end
+
 	-- reset points
 	for _, v in pairs(getObjects()) do
         if v.hasTag("score") then
@@ -300,9 +322,9 @@ function newround()
             v.destruct()
         end
     end
-    for _,c in ipairs(pColors) do
+    for _,c in ipairs(PLAYER_COLORS) do
         for i,v in ipairs(getObjects()) do
-            if v.getGMNotes()== c then
+            if v.getGMNotes() == c then
             Playerscore = getScore(v)
             end
         end
@@ -347,6 +369,7 @@ function countItems()
     for i, v in ipairs(scriptzone) do
 		local seenNumbers = {}
         local scriptZoneObjects = v.getObjects() -- get objects already in the zone
+        local color = v.getGMNotes()
 
         for _, scriptZoneObject in pairs(scriptZoneObjects) do -- key = 1|2|3|etc, object = actual TTS object
             if scriptZoneObject.hasTag("number") and scriptZoneObject.is_face_down == false then
@@ -359,9 +382,10 @@ function countItems()
 					else
 						hasDuplicateNumber = true
 						if not hasBeenPewd then
-                            local player = Player[v.getGMNotes()]
+                            local player = Player[color]
                             local broadcastMessage = ("%s got pewd!"):format(player.steam_name or player.color)
 							broadcastToAll(broadcastMessage, player.color)
+                            PlayerData[color].state = "Pewd"
 							hasBeenPewd = true
 						end
 					end
@@ -376,7 +400,14 @@ function countItems()
             elseif scriptZoneObject.hasTag("mult") and scriptZoneObject.is_face_down == false then
                 local description = scriptZoneObject.getDescription() -- get the description
                 mult[i] = tonumber(description)  -- convert it to a number
+
+            elseif scriptZoneObject.hasTag("special") and scriptZoneObject.is_face_down == false then
+                
             end
+        end
+
+        if not hasDuplicateNumber and PlayerData[color].state == "Pewd" then
+            PlayerData[color].state = ""
         end
 
         score[i] = numberSum[i]*mult[i]+plusSum[i]
@@ -785,11 +816,17 @@ function UpdateScoreBoard()
             local gameScore = GetTotalScore(color)
             local potentialScore = gameScore + roundScore
 
+            local textColor = "#FFFFFF"
+            if PlayerData[color].state == "Pewd" then
+                textColor = "#FF8888"
+            end
+
             table.insert(players, {
                 name = Player[color].steam_name,
                 roundScore = roundScore,
                 gameScore = gameScore,
-                potentialScore = potentialScore
+                potentialScore = potentialScore,
+                textColor = textColor
             })
         end
     end
@@ -803,12 +840,12 @@ function UpdateScoreBoard()
     for _, p in ipairs(players) do
         rows = rows .. string.format([[
             <Row>
-                <Cell><Text text=" %s" fontSize="15" color="#FFFFFF" alignment="MiddleLeft"/></Cell>
-                <Cell><Text text="%d" fontSize="15" color="#FFFFFF" alignment="MiddleCenter"/></Cell>
-                <Cell><Text text="%d" fontSize="15" color="#FFFFFF" alignment="MiddleCenter"/></Cell>
-                <Cell><Text text="(%d)" fontSize="15" color="#AAAAAA" alignment="MiddleCenter"/></Cell>
+                <Cell><Text text=" %s" fontSize="15" color="%s" alignment="MiddleLeft"/></Cell>
+                <Cell><Text text="%d" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
+                <Cell><Text text="%d" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
+                <Cell><Text text="(%d)" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
             </Row>
-        ]], p.name, p.roundScore, p.gameScore, p.potentialScore)
+        ]], p.name, p.textColor, p.roundScore, p.textColor, p.gameScore, p.textColor, p.potentialScore, p.textColor)
     end
 
     local xml = string.format([[
@@ -823,13 +860,13 @@ function UpdateScoreBoard()
             returnToOriginalPositionWhenReleased="false"
             color="#000000AA"
             padding="5">
-            
+
             <TableLayout columnWidths="120 60 60 60">
-                <Row>
-                    <Cell><Text text=" Player" fontSize="16" color="#FFFFFF" alignment="MiddleLeft"/></Cell>
-                    <Cell><Text text="Round" fontSize="16" color="#FFFFFF" alignment="MiddleCenter"/></Cell>
-                    <Cell><Text text="Game" fontSize="16" color="#FFFFFF" alignment="MiddleCenter"/></Cell>
-                    <Cell><Text text="Total" fontSize="16" color="#FFFFFF" alignment="MiddleCenter"/></Cell>
+                <Row fontStyle="Bold">
+                    <Cell><Panel color="#000000AA"><Text text=" Player" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleLeft"/></Panel></Cell>
+                    <Cell><Panel color="#000000AA"><Text text="Round" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
+                    <Cell><Panel color="#000000AA"><Text text="Game" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
+                    <Cell><Panel color="#000000AA"><Text text="Total" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
                 </Row>
                 %s
             </TableLayout>

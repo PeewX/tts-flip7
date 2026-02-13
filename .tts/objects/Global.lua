@@ -840,16 +840,16 @@ function UpdateScoreBoard()
     for _, p in ipairs(players) do
         rows = rows .. string.format([[
             <Row>
-                <Cell><Text text=" %s" fontSize="15" color="%s" alignment="MiddleLeft"/></Cell>
-                <Cell><Text text="%d" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
-                <Cell><Text text="%d" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
-                <Cell><Text text="(%d)" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
+                <Cell dontUseTableCellBackground="true"><Text text=" %s" fontSize="15" color="%s" alignment="MiddleLeft"/></Cell>
+                <Cell dontUseTableCellBackground="true"><Text text="%d" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
+                <Cell dontUseTableCellBackground="true"><Text text="%d" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
+                <Cell dontUseTableCellBackground="true"><Text text="(%d)" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
             </Row>
         ]], p.name, p.textColor, p.roundScore, p.textColor, p.gameScore, p.textColor, p.potentialScore, p.textColor)
     end
 
     local xml = string.format([[
-        <Panel id="scoreHUD"
+    <TableLayout columnWidths="120 60 60 60"
             width="300"
             height="%d"
             anchorMin="1 0.5"
@@ -859,18 +859,16 @@ function UpdateScoreBoard()
             allowDragging="true"
             returnToOriginalPositionWhenReleased="false"
             color="#000000AA"
-            padding="5">
+            cellPadding ="0">
 
-            <TableLayout columnWidths="120 60 60 60">
                 <Row fontStyle="Bold">
-                    <Cell><Panel color="#000000AA"><Text text=" Player" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleLeft"/></Panel></Cell>
-                    <Cell><Panel color="#000000AA"><Text text="Round" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
-                    <Cell><Panel color="#000000AA"><Text text="Game" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
-                    <Cell><Panel color="#000000AA"><Text text="Total" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
+                    <Cell dontUseTableCellBackground="true"><Panel color="#000000AA"><Text text=" Player" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleLeft"/></Panel></Cell>
+                    <Cell dontUseTableCellBackground="true"><Panel color="#000000AA"><Text text="Round" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
+                    <Cell dontUseTableCellBackground="true"><Panel color="#000000AA"><Text text="Game" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
+                    <Cell dontUseTableCellBackground="true"><Panel color="#000000AA"><Text text="Total" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
                 </Row>
                 %s
             </TableLayout>
-        </Panel>
     ]], 40 + (#players * 24), rows)
 
     UI.setXml(xml)

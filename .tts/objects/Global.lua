@@ -79,7 +79,7 @@ function onLoad()
         if v.type == "Scripting" then
             table.insert(scriptzone, v)
             v.createButton({
-                click_function = "none",    
+                click_function = "none",
                 function_owner = self,
                 label          = "0",
                 position       = {0.4, 0.25, -1},
@@ -121,8 +121,6 @@ function onLoad()
 
     -- Running countItems two times a second
     Wait.time(countItems, 0.5, -1)
-
-    CreateScoreBoard()
 end
 
 function none()
@@ -766,29 +764,6 @@ function scan2()
     end
 end
 
-function CreateScoreBoard()
-    local xml = [[
-    <Panel id="scoreHUD"
-       width="260"
-       height="20"
-
-       anchorMin="1 0.5"
-       anchorMax="1 0.5"
-       rectAlignment="MiddleRight"
-
-       offsetXY="-10 0"
-
-       allowDragging="true"
-       color="#000000AA"
-       padding="1"
-       autoLayout="Vertical">
-
-        <Text id="scoreList" text="" fontSize="16" color="#FFFFFF" alignment="UpperLeft"/>
-    </Panel>
-    ]]
-    UI.setXml(xml)
-end
-
 function GetTotalScore(color)
     for _, v in pairs(getObjects()) do
         if v.hasTag("score") and v.hasTag(color) then
@@ -802,7 +777,6 @@ function GetTotalScore(color)
 end
 
 function UpdateScoreBoard()
-    local txt = ""
     local players = {}
 
     for i, color in ipairs(PLAYER_COLORS) do
@@ -820,12 +794,47 @@ function UpdateScoreBoard()
         end
     end
 
-    table.sort(players, function(a, b) return a.potentialScore > b.potentialScore end)
+    table.sort(players, function(a, b)
+        return a.potentialScore > b.potentialScore
+    end)
 
-    for _, player in pairs(players) do
-        txt = ("%s%s: %d | %d (%d)\n"):format(txt, player.name, player.roundScore, player.gameScore, player.potentialScore)
+    local rows = ""
+
+    for _, p in ipairs(players) do
+        rows = rows .. string.format([[
+            <Row>
+                <Cell><Text text=" %s" fontSize="15" color="#FFFFFF" alignment="MiddleLeft"/></Cell>
+                <Cell><Text text="%d" fontSize="15" color="#FFFFFF" alignment="MiddleCenter"/></Cell>
+                <Cell><Text text="%d" fontSize="15" color="#FFFFFF" alignment="MiddleCenter"/></Cell>
+                <Cell><Text text="(%d)" fontSize="15" color="#AAAAAA" alignment="MiddleCenter"/></Cell>
+            </Row>
+        ]], p.name, p.roundScore, p.gameScore, p.potentialScore)
     end
 
-    UI.setAttribute("scoreHUD", "height", #players * 20) -- default line height: 20px
-    UI.setValue("scoreList", txt)
+    local xml = string.format([[
+        <Panel id="scoreHUD"
+            width="300"
+            height="%d"
+            anchorMin="1 0.5"
+            anchorMax="1 0.5"
+            rectAlignment="MiddleRight"
+            offsetXY="-10 0"
+            allowDragging="true"
+            returnToOriginalPositionWhenReleased="false"
+            color="#000000AA"
+            padding="5">
+            
+            <TableLayout columnWidths="120 60 60 60">
+                <Row>
+                    <Cell><Text text=" Player" fontSize="16" color="#FFFFFF" alignment="MiddleLeft"/></Cell>
+                    <Cell><Text text="Round" fontSize="16" color="#FFFFFF" alignment="MiddleCenter"/></Cell>
+                    <Cell><Text text="Game" fontSize="16" color="#FFFFFF" alignment="MiddleCenter"/></Cell>
+                    <Cell><Text text="Total" fontSize="16" color="#FFFFFF" alignment="MiddleCenter"/></Cell>
+                </Row>
+                %s
+            </TableLayout>
+        </Panel>
+    ]], 40 + (#players * 24), rows)
+
+    UI.setXml(xml)
 end

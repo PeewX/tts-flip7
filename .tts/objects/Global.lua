@@ -74,23 +74,6 @@ function onLoad()
         font_size      = 700
     })
 
-    -- TODO: Display reset game button after game start
-    --[[
-        StartBtn.createButton({
-            click_function = "resetGame",
-            function_owner = self,
-            label          = "Reset",
-            position       = {0, 0.5, 0},
-            rotation       = {0, 180, 0},
-            scale          = {0.4/Scale.x, 1, 0.4/Scale.z},
-            width          = 1200*Bound.size.x,
-            height         = 800*Bound.size.z,
-            color          = "White",
-            font_color     = "Black",
-            font_size      = 700*Bound.size.z
-        })
-    ]]--
-
     deck2 = scan2()
     deck2.shuffle()
     scriptzone = {}
@@ -218,9 +201,24 @@ function startgame()
             click_function = "newround",
             function_owner = self,
             label          = "New Round",
-            position       = {0/Scale.x,0.5,0/Scale.z},
-            rotation       = {0,180,0},
-            scale          = {1/Scale.x,1,1/Scale.z},
+            position       = {0, 0.5, 0},
+            rotation       = {0, 180, 0},
+            scale          = {1/Scale.x, 1, 1/Scale.z},
+            width          = 4000,
+            height         = 1000,
+            color          = "White",
+            font_color     = "Black",
+            font_size      = 700,
+            tooltip        = "Calculate the scores and start the next round."
+        })
+    else
+        NewroundBtn.createButton({
+            click_function = "resetGame",
+            function_owner = self,
+            label          = "Reset",
+            position       = {0, 0.5, 0},
+            rotation       = {0, 180, 0},
+            scale          = {1/Scale.x, 1, 1/Scale.z},
             width          = 4000,
             height         = 1000,
             color          = "White",

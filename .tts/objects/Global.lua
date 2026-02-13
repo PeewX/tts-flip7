@@ -511,8 +511,8 @@ function CreateScoreBoard()
     UI.setXml(xml)
 end
 
-function getTotalScore(color)
-    for _, v in ipairs(getObjects()) do
+function GetTotalScore(color)
+    for _, v in pairs(getObjects()) do
         if v.hasTag("score") and v.hasTag(color) then
             local inputs = v.getInputs()
             if inputs[1] then
@@ -525,18 +525,29 @@ end
 
 function UpdateScoreBoard()
     local txt = ""
-    local seatedPlayers = 0
+    local players = {}
+
     for i, color in ipairs(PLAYER_COLORS) do
         if Player[color].seated then 
-        local roundScore = score[i] or 0
-        local totalScore = getTotalScore(color)
-        local playerName = Player[color].steam_name
-        local newScore = totalScore + roundScore
-        txt = ("%s%s: %d | %d (%d)\n"):format(txt, playerName, roundScore, totalScore, newScore)
-        seatedPlayers = seatedPlayers + 1
-       end
+            local roundScore = score[i] or 0
+            local gameScore = GetTotalScore(color)
+            local potentialScore = gameScore + roundScore
+            
+            table.insert(players, {
+                name = Player[color].steam_name,
+                roundScore = roundScore,
+                gameScore = gameScore,
+                potentialScore = potentialScore
+            })
+        end
     end
 
-    UI.setAttribute("scoreHUD", "height", seatedPlayers * 20) -- default line height: 20px
+    table.sort(players, function(a, b) return a.potentialScore > b.potentialScore end)
+
+    for _, player in pairs(players) do
+        txt = ("%s%s: %d | %d (%d)\n"):format(txt, player.name, player.roundScore, player.gameScore, player.potentialScore)
+    end
+
+    UI.setAttribute("scoreHUD", "height", #players * 20) -- default line height: 20px
     UI.setValue("scoreList", txt)
 end

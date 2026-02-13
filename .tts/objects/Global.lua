@@ -65,7 +65,7 @@ function onLoad()
         function_owner = self,
         label          = "",
         position       = {0, 0.5, 0.5/Scale.z},
-        rotation       = {0,180,0},
+        rotation       = {0, 180, 0},
         scale          = {1/Scale.x, 1, 1/Scale.z},
         width          = 6000,
         height         = 1000,
@@ -74,15 +74,12 @@ function onLoad()
         font_size      = 700
     })
 
-    deck2 = scan2()
-    deck2.shuffle()
     scriptzone = {}
-
     for _, v in pairs(getObjects()) do
         if v.type == "Scripting" then
             table.insert(scriptzone, v)
             v.createButton({
-                click_function = "none",
+                click_function = "none",    
                 function_owner = self,
                 label          = "0",
                 position       = {0.4, 0.25, -1},
@@ -97,9 +94,6 @@ function onLoad()
 
         end
     end
-
-    -- Running countItems two times a second
-    Wait.time(countItems, 0.5, -1)
 
     score = {}
     numberSum = {}
@@ -116,6 +110,17 @@ function onLoad()
     baseBag.interactable = false
     expBag.interactable = false
     stayBag.interactable = false
+
+    -- Init deck with base game
+    deck2 = scan2()
+    deck2.destruct()
+    deck2 = baseBag.takeObject()
+    deck2.setPosition({-1.60, 2.1, 1.13})
+    deck2.setRotation({0, 180, 180})
+    deck2.shuffle()
+
+    -- Running countItems two times a second
+    Wait.time(countItems, 0.5, -1)
 
     CreateScoreBoard()
 end
@@ -357,7 +362,7 @@ function countItems()
 						hasDuplicateNumber = true
 						if not hasBeenPewd then
                             local player = Player[v.getGMNotes()]
-                            local broadcastMessage = ("%s got pewd!"):format(player.steam_name)
+                            local broadcastMessage = ("%s got pewd!"):format(player.steam_name or player.color)
 							broadcastToAll(broadcastMessage, player.color)
 							hasBeenPewd = true
 						end

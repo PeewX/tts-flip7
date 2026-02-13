@@ -168,7 +168,7 @@ function startgame()
                 click_function = "bust",
                 function_owner = self,
                 label          = "Bust",
-                position       = {0, 0, 3},
+                position       = {0, 0, 3/Scale.z},
                 rotation       = {0, 0, 0},
                 scale          = {1.8/Scale.x, 1, 0.8/Scale.z},
                 width          = 650*Bound.size.x,

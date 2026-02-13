@@ -1,3 +1,6 @@
+-- Globals
+PLAYER_COLORS = {"Yellow", "Red", "White", "Orange", "Blue", "Pink", "Green", "Purple"}
+
 function onLoad()
     StartBtn = getObjectFromGUID("5324c0")
     HitBtn = getObjectFromGUID("e7358b")
@@ -5,17 +8,17 @@ function onLoad()
     NewroundBtn = getObjectFromGUID("4c4180")
     Scale = StartBtn.getScale()
     Bound = StartBtn.getBoundsNormalized()
-    
+
     StartBtn.createButton({
         click_function = "none",
         function_owner = self,
         label          = "Flip 7",
-        position       = {0/Scale.x,0.5,3/Scale.z},
-        rotation       = {0,180,0},
-        scale          = {1/Scale.x,1,1/Scale.z},
+        position       = {0, 0.5, 3/Scale.z},
+        rotation       = {0, 180, 0},
+        scale          = {1/Scale.x, 1, 1/Scale.z},
         width          = 8000,
         height         = 1000,
-        color          = {0.9,0.9,0.9,1},
+        color          = {0.9, 0.9, 0.9, 1},
         font_color     = "Black",
         font_size      = 700
     })
@@ -24,26 +27,26 @@ function onLoad()
         click_function = "startgame",
         function_owner = self,
         label          = "Start Game",
-        position       = {0/Scale.x,0.5,-2/Scale.z},
+        position       = {0, 0.5, -2/Scale.z},
         rotation       = {0,180,0},
-        scale          = {1/Scale.x,1,1/Scale.z},
+        scale          = {1/Scale.x, 1, 1/Scale.z},
         width          = 4000,
         height         = 1000,
-        color          = {0.6,0.85,0.6},        
+        color          = {0.6, 0.85, 0.6},
         font_color     = "Black",
         font_size      = 700
-    })    
-    
+    })
+
     StartBtn.createButton({
         click_function = "selection",
         label="<",
         function_owner = self,
         width = 700,
         height = 1000,
-        position = {-9.3/Scale.x,0.5,3/Scale.z},
-        scale = {1/Scale.x,1,1/Scale.z},
+        position = {-9.3/Scale.x, 0.5, 3/Scale.z},
+        scale = {1/Scale.x, 1, 1/Scale.z},
         font_size = 549,
-        color = {0.9,0.9,0.9,1},
+        color = {0.9, 0.9, 0.9, 1},
     })
     StartBtn.createButton({
         click_function = "selection",
@@ -51,59 +54,70 @@ function onLoad()
         function_owner = self,
         width = 700,
         height = 1000,
-        position = {9.3/Scale.x,0.5,3/Scale.z},
-        scale = {1/Scale.x,1,1/Scale.z},
+        position = {9.3/Scale.x, 0.5, 3/Scale.z},
+        scale = {1/Scale.x, 1, 1/Scale.z},
         font_size = 549,
-        color = {0.9,0.9,0.9,1},
+        color = {0.9, 0.9, 0.9, 1},
     })
 
     StartBtn.createButton({
         click_function = "brutal",
         function_owner = self,
         label          = "",
-        position       = {0/Scale.x,0.5,0.5/Scale.z},
+        position       = {0, 0.5, 0.5/Scale.z},
         rotation       = {0,180,0},
-        scale          = {1/Scale.x,1,1/Scale.z},
+        scale          = {1/Scale.x, 1, 1/Scale.z},
         width          = 6000,
         height         = 1000,
-        color          = {0,0,0,0},        
-        font_color     = {1,1,1,100},
+        color          = {0, 0, 0, 0},
+        font_color     = {1, 1, 1, 100},
         font_size      = 700
-    })    
+    })
+
+    -- TODO: Display reset game button after game start
+    --[[
+        StartBtn.createButton({
+            click_function = "resetGame",
+            function_owner = self,
+            label          = "Reset",
+            position       = {0, 0.5, 0},
+            rotation       = {0, 180, 0},
+            scale          = {0.4/Scale.x, 1, 0.4/Scale.z},
+            width          = 1200*Bound.size.x,
+            height         = 800*Bound.size.z,
+            color          = "White",
+            font_color     = "Black",
+            font_size      = 700*Bound.size.z
+        })
+    ]]--
 
     deck2 = scan2()
     deck2.shuffle()
+    scriptzone = {}
 
-    pColors = {"Yellow","Red","White","Orange","Blue","Pink","Green","Purple"}
-    scriptzone ={}
-    setupCount = 1
-    for i,v in ipairs(getObjects()) do
+    for _, v in pairs(getObjects()) do
         if v.type == "Scripting" then
-            table.insert(scriptzone,v)
+            table.insert(scriptzone, v)
             v.createButton({
                 click_function = "none",
                 function_owner = self,
                 label          = "0",
-                position       = {0.4,0.25,-1},
-                rotation       = {0,180,0},
-                scale          = {0.2,0,0.25},
+                position       = {0.4, 0.25, -1},
+                rotation       = {0, 180, 0},
+                scale          = {0.2, 0, 0.25},
                 width          = 0,
                 height         = 0,
                 font_size      = 500,
                 color          = "White",
                 font_color     = "Grey",
             })
-            setupCount = setupCount+1
+
         end
     end
-    timerID = self.getGUID()..math.random(9999999999999)
-    --Sets position/color for the button, spawns it
-    --Start timer which repeats forever, running countItems() every second
-    Timer.create({
-        identifier=timerID,
-        function_name="countItems", function_owner=self,
-        repetitions=0, delay=0.5
-    })
+
+    -- Running countItems two times a second
+    Wait.time(countItems, 0.5, -1)
+
     score = {}
     numberSum = {}
     plusSum = {}
@@ -111,6 +125,8 @@ function onLoad()
     countNumbercard = {}
     isbase = true
     isbrutal = false
+    hasBeenPewd = false
+
     baseBag = getObjectFromGUID("314599")
     expBag = getObjectFromGUID("ff1e2d")
     stayBag = getObjectFromGUID("5e7ab9")
@@ -118,6 +134,7 @@ function onLoad()
     expBag.interactable = false
     stayBag.interactable = false
 
+    CreateScoreBoard()
 end
 
 function none()
@@ -134,17 +151,17 @@ function brutal()
 end
 
 function startgame()
-        StartBtn.destruct()
+    StartBtn.destruct()
     HitBtn.createButton({
         click_function = "hit",
         function_owner = self,
         label          = "Hit",
-        position       = {0/Scale.x,0.5,0/Scale.z},
-        rotation       = {0,180,0},
-        scale          = {0.8/Scale.x,1,0.8/Scale.z},
+        position       = {0, 0.5, 0},
+        rotation       = {0, 180, 0},
+        scale          = {0.8/Scale.x, 1, 0.8/Scale.z},
         width          = 700*Bound.size.x,
         height         = 700*Bound.size.z,
-        color          = {0.6,0.85,0.6},
+        color          = {0.6, 0.85, 0.6},
         font_color     = "Black",
         font_size      = 900*Bound.size.z
     })
@@ -153,27 +170,27 @@ function startgame()
         click_function = "stay",
         function_owner = self,
         label          = "Stay",
-        position       = {0/Scale.x,0.5,0/Scale.z},
+        position       = {0, 0.5, 0},
         rotation       = {0,180,0},
-        scale          = {0.8/Scale.x,1,0.8/Scale.z},
+        scale          = {0.8/Scale.x, 1, 0.8/Scale.z},
         width          = 700*Bound.size.x,
         height         = 700*Bound.size.z,
-        color          = {0.8,0.8,0.8},
+        color          = {0.8, 0.8, 0.8},
         font_color     = "Black",
         font_size      = 900*Bound.size.z
     })
-    for i,v in ipairs(getObjects()) do
+    for _,v in pairs(getObjects()) do
         if v.hasTag("score") then
             v.createButton({
                 click_function = "bust",
                 function_owner = self,
                 label          = "Bust",
-                position       = {0/Scale.x,0,3/Scale.z},
-                rotation       = {0,0,0},
-                scale          = {1.8/Scale.x,1,0.8/Scale.z},
+                position       = {0, 0, 3},
+                rotation       = {0, 0, 0},
+                scale          = {1.8/Scale.x, 1, 0.8/Scale.z},
                 width          = 650*Bound.size.x,
                 height         = 600*Bound.size.z,
-                color          = {0.8,0.6,0.6},
+                color          = {0.8, 0.6, 0.6},
                 font_color     = "Black",
                 font_size      = 900*Bound.size.z
             })
@@ -214,7 +231,28 @@ function startgame()
     end
 end
 
+function resetGame()
+	-- reset points
+	for _, v in pairs(getObjects()) do
+        if v.hasTag("score") then
+            v.editInput({
+                index = 0,
+                value = 0,
+            })
+        end
+    end
 
+    -- put all cards back
+    local drawDeck = scan2()
+    for _, v in pairs(getObjects()) do
+        if v ~= drawDeck and (v.type == "Deck" or v.type == "Card") then
+            v.setPosition({-1.60, 2.3, 1.13})
+            v.setRotation({0, 180, 180})
+        end
+    end
+
+    drawDeck.shuffle()
+end
 
 function selection()
     if isbase then
@@ -256,7 +294,7 @@ function newround()
         end
     end
 
-    for i,v in ipairs(getObjects()) do 
+    for i,v in ipairs(getObjects()) do
         if v.hasTag("stay") then
             v.destruct()
         end
@@ -266,7 +304,7 @@ function newround()
             if v.getGMNotes()== c then
             Playerscore = getScore(v)
             end
-        end   
+        end
         for i,v in ipairs(getObjects()) do
             if v.hasTag("score") and v.hasTag(c) then
                 Score1 = v.getInputs()[1].value
@@ -278,7 +316,6 @@ function newround()
             end
         end
     end
-
 end
 
 function minus(o,p,c)
@@ -295,51 +332,60 @@ function minus(o,p,c)
     })
 end
 
-
 function countItems()
-    for i= 1,8 do
+    local hasDuplicateNumber = false
+
+    for i = 1, 8 do
         score[i] = 0
         numberSum[i] = 0
         plusSum[i] = 0
         mult[i] = 1
         countNumbercard[i] = 0
     end
+
     for i, v in ipairs(scriptzone) do
-        local objects = v.getObjects() -- get objects already in the zone
-        for key,object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
-            if object.hasTag("number") and object.is_face_down == false then
-                local description = object.getDescription() -- get the description
+		local seenNumbers = {}
+        local scriptZoneObjects = v.getObjects() -- get objects already in the zone
+
+        for _, scriptZoneObject in pairs(scriptZoneObjects) do -- key = 1|2|3|etc, object = actual TTS object
+            if scriptZoneObject.hasTag("number") and scriptZoneObject.is_face_down == false then
+                local description = scriptZoneObject.getDescription() -- get the description
                 local number = tonumber(description)  -- convert it to a number
                 if(number ~= nil) then -- check if you actually get a number (tonumber returns nil if it isn't)
-                    numberSum[i] = numberSum[i] + number
+					if not seenNumbers[number] then
+						seenNumbers[number] = true
+						numberSum[i] = numberSum[i] + number
+					else
+						hasDuplicateNumber = true
+						if not hasBeenPewd then
+                            local player = Player[v.getGMNotes()]
+                            local broadcastMessage = ("%s got pewd!"):format(player.steam_name)
+							broadcastToAll(broadcastMessage, player.color)
+							hasBeenPewd = true
+						end
+					end
                 end
-                countNumbercard[i] = countNumbercard[i] +1
-            end
-        end
-    
-        for key,object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
-            if object.hasTag("plus") and object.is_face_down == false then
-                local description = object.getDescription() -- get the description
+                countNumbercard[i] = countNumbercard[i] + 1
+
+            elseif scriptZoneObject.hasTag("plus") and scriptZoneObject.is_face_down == false then
+                local description = scriptZoneObject.getDescription() -- get the description
                 local plus = tonumber(description)  -- convert it to a number
                 plusSum[i] = plusSum[i] + plus
-            end
-        end
-    
-        for key,object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
-            if object.hasTag("mult") and object.is_face_down == false then
-                local description = object.getDescription() -- get the description
+
+            elseif scriptZoneObject.hasTag("mult") and scriptZoneObject.is_face_down == false then
+                local description = scriptZoneObject.getDescription() -- get the description
                 mult[i] = tonumber(description)  -- convert it to a number
             end
         end
 
-        score[i] = math.floor(numberSum[i]*mult[i]+plusSum[i])
-
+        score[i] = numberSum[i]*mult[i]+plusSum[i]
         if countNumbercard[i] == 7 then
             score[i] = score[i] +15
         end
 
-        for key,object in ipairs(objects) do
-            if object.hasTag("zero") and countNumbercard[i] < 7 then
+        -- is this correct? Should only apply to brutal rules
+        for _, scriptZoneObject in ipairs(scriptZoneObjects) do
+            if scriptZoneObject.hasTag("zero") and countNumbercard[i] < 7 then
                 score[i] = 0
             end
         end
@@ -352,14 +398,20 @@ function countItems()
 
         v.editButton({label = score[i]})
     end
+
+	if not hasDuplicateNumber then
+		hasBeenPewd = false
+	end
+
+    UpdateScoreBoard()
 end
 
 
 function updateScore(zone)
     local scoreValue = getScore(zone)
     zone.editButton({
-        index          = 0,
-        label          = scoreValue,
+        index = 0,
+        label = scoreValue,
     })
 end
 
@@ -370,11 +422,12 @@ function getScore(zone)
     local mult = 1
     local countNumbercard = 0
     local objects = zone.getObjects() -- get objects already in the zone
-    for key,object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
+
+    for _, object in pairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
         if object.hasTag("number") and object.is_face_down == false then
             local description = object.getDescription() -- get the description
             local number = tonumber(description)  -- convert it to a number
-            if(number ~= nil) then -- check if you actually get a number (tonumber returns nil if it isn't)
+            if (number ~= nil) then -- check if you actually get a number (tonumber returns nil if it isn't)
                  numberSum = numberSum + number
             end
             countNumbercard = countNumbercard +1
@@ -382,133 +435,65 @@ function getScore(zone)
         end
     end
 
-    for key,object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
+    for _, object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
         if object.hasTag("plus") and object.is_face_down == false then
             local description = object.getDescription() -- get the description
             local plus = tonumber(description)  -- convert it to a number
-             plusSum = plusSum + plus
+            plusSum = plusSum + plus
         end
     end
 
-    for key,object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
+    for _, object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
         if object.hasTag("mult") and object.is_face_down == false then
             local description = object.getDescription() -- get the description
-             mult = tonumber(description)  -- convert it to a number
-            
+            mult = tonumber(description) or 0 -- convert it to a number
         end
     end
-        score = math.floor(numberSum*mult+plusSum)
-        if countNumbercard == 7 then
-            score = score +15
-        end
 
-        if isbrutal == false then
-            if score < 0 then
-                score = 0
-            end
+    score = math.floor(numberSum * mult + plusSum)
+    if countNumbercard == 7 then
+        score = score + 15
+    end
+
+    if isbrutal == false then
+        if score < 0 then
+            score = 0
         end
+    end
 
     return score
 end
 
-function bust(o,c,a)
-    posCount = 0.1
-
-    -- 플레이어 기준 위치 및 회전
-    local handTransform = Player[c].getHandTransform()
-
-    -- 회전 각도 (플레이어 기준 정방향)
-    local angleY = math.rad(handTransform.rotation.y)
-    local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
-    local center = handTransform.position + forward * 16
-
-    local spacingX = 3
-    local offsetZ_up = 2
-    local offsetZ_down = -2
-
--- 회전 보조 함수 (회전 반대로 적용)
-local function rotateOffset(x, z)
-    local rx = math.cos(-angleY) * x - math.sin(-angleY) * z
-    local rz = math.sin(-angleY) * x + math.cos(-angleY) * z
-    return Vector(rx, 0, rz)
-    end
-    for i = -1, 1 do
-        local localOffset = rotateOffset(spacingX * i, offsetZ_up)
-        local origin = center + localOffset
-        local hitList = Physics.cast({
-            origin       = origin + vector(0, -3, 0),
-            direction    = {0, -1, 0},
-            type         = 3,
-            size         = {1, 1, 1},
-            orientation  = {0, 0, 0},
-            max_distance = 3,
-            debug        = false,
-        })
-    
-        for _, v in ipairs(hitList) do 
-            if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                v.hit_object.setPosition({2.06, 1.49+posCount, 1.07})
-                v.hit_object.setRotation({0,180,0})
-                posCount = posCount + 0.1
+function bust(object, color, alt)
+    for _, scriptZoneObject in pairs(scriptzone) do
+        if scriptZoneObject.getGMNotes() == color then
+            for _, v in pairs(scriptZoneObject.getObjects()) do
+                if v.type == "Deck" or v.type == "Card" then
+                    v.setPosition({2.06, 2.3, 1.07})
+                    v.setRotation({0, 180, 0})
+                end
             end
-        end
-    end
-    for i = -2, 1 do
-        local x = spacingX * i + spacingX / 2
-        local localOffset = rotateOffset(x, offsetZ_down)
-        local origin = center + localOffset
-        local hitList2 = Physics.cast({
-            origin       = origin + vector(0, -3, 0),
-            direction    = {0, -1, 0},
-            type         = 3,
-            size         = {1, 1, 1},
-            orientation  = {0, 0, 0},
-            max_distance = 3,
-            debug        = false,
-        })
-
-        for _, v in ipairs(hitList2) do 
-            if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                v.hit_object.setPosition({2.06, 1.49+posCount, 1.07})
-                v.hit_object.setRotation({0,180,0})
-                posCount = posCount + 0.1
-            end
-        end
-    end
-    for i = -2, 2 do  -- 5개 칸 (i = -2, -1, 0, 1, 2)
-        local x = spacingX * i  -- x 값 조정: 좌우 간격 유지
-        local localOffset = rotateOffset(x, offsetZ_down)
-        local origin = handTransform.position + forward * 11 + localOffset
-        local hitList3 = Physics.cast({
-            origin       = origin + vector(0, -3, 0),
-            direction    = {0, -1, 0},
-            type         = 3,
-            size         = {1, 1, 1},
-            orientation  = {0, 0, 0},
-            max_distance = 3,
-            debug        = false,
-        })
-    
-        for k, v in ipairs(hitList3) do 
-            if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                v.hit_object.setPosition({2.06, 1.49+posCount, 1.07})
-                v.hit_object.setRotation({0,180,0})
-                posCount = posCount + 0.1
-            end
+            break
         end
     end
 end
 
-function stay(o,c,a)
+function stay(object, color, alt)
+    if alt then return false end
+    if hasBeenPewd then return false end
+
     if isbase then
-        bust(o,c,a)
-        for i,v in ipairs(getObjects()) do
-            if v.getGMNotes()== c then
-            Playerscore = getScore(v)
+        bust(_, color) -- Call bust function to reset player cards
+
+        local Playerscore = 0
+        for _, v in pairs(getObjects()) do
+            if v.getGMNotes() == color then
+                Playerscore = getScore(v)
             end
-        end   
-        for i,v in ipairs(getObjects()) do
-            if v.hasTag("score") and v.hasTag(c) then
+        end
+
+        for _, v in pairs(getObjects()) do
+            if v.hasTag("score") and v.hasTag(color) then
                 Score1 = v.getInputs()[1].value
                 Score2 = Score1 + Playerscore
                 v.editInput({
@@ -518,8 +503,8 @@ function stay(o,c,a)
             end
         end
     else
-                -- 플레이어 기준 위치 및 회전
-        local handTransform = Player[c].getHandTransform()
+        -- 플레이어 기준 위치 및 회전
+        local handTransform = Player[color].getHandTransform()
         -- 회전 각도 (플레이어 기준 정방향)
         local angleY = math.rad(handTransform.rotation.y)
         local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
@@ -529,108 +514,38 @@ function stay(o,c,a)
         local offsetZ_up = 2
         local offsetZ_down = -2
 
-        -- 회전 보조 함수 (회전 반대로 적용)
-        local function rotateOffset(x, z)
-            local rx = math.cos(-angleY) * x - math.sin(-angleY) * z
-            local rz = math.sin(-angleY) * x + math.cos(-angleY) * z
-
-            return Vector(rx, 0, rz)
-        end
         stayToken = stayBag.takeObject()
-        stayToken.setPosition(center+rotateOffset(0,6))
-        stayToken.setRotation(Vector(0, handTransform.rotation.y+180, 0))
+        stayToken.setPosition(center + rotateOffset(0, 6, angleY))
+        stayToken.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
     end
 end
 
-function wait(time)
-    local start = os.time()
-    repeat
-        coroutine.yield(0)
-    until os.time() > start + time
-  end
+local lastHit = os.time()
+function hit(object, color, alt)
+    if alt then return false end
+    if hasBeenPewd then return false end
 
-function hit(o,c,a)
-    if clicked then
-        return
-    else
-        clicked = true
-        Wait.time(function() 
-            clicked = false
-        end,0.5)
-    end
-    hit_o=o
-    hit_a=a
-    Pcolor=c
-    startLuaCoroutine(Global, "hit2")
-end
+    if os.time() - lastHit < 0.5 then return end
+    lastHit = os.time()
 
-function hit2()
-    
-    local count = 0
-
-    -- 플레이어 기준 위치 및 회전
-    local handTransform = Player[Pcolor].getHandTransform()
-    -- 회전 각도 (플레이어 기준 정방향)
-    
+    local handTransform = Player[color].getHandTransform()
     local angleY = math.rad(handTransform.rotation.y)
-
     local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
-    
     local center = handTransform.position + forward * 16
 
     local spacingX = 3
     local offsetZ_up = 2
     local offsetZ_down = -2
 
--- 회전 보조 함수 (회전 반대로 적용)
-local function rotateOffset(x, z)
-    local rx = math.cos(-angleY) * x - math.sin(-angleY) * z
-    local rz = math.sin(-angleY) * x + math.cos(-angleY) * z
+    local emptyIndex = nil
+    local filled = false
 
-    return Vector(rx, 0, rz)
-end
-
-
-local emptyIndex = nil
-local filled = false
-
--- 위쪽 3칸 (1 ~ 3)
-for i = -1, 1 do
-    local localOffset = rotateOffset(spacingX * i, offsetZ_up)
-    local origin = center + localOffset
-    local hitList = Physics.cast({
-        origin       = origin + vector(0, -3, 0),
-        direction    = {0, -1, 0},
-        type         = 3,
-        size         = {1, 1, 1},
-        orientation  = {0, 0, 0},
-        max_distance = 3,
-        debug        = false,
-    })
-
-    filled = false
-    for _, v in ipairs(hitList) do 
-        if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-            filled = true
-            break
-        end
-    end
-
-    if not filled then
-        emptyIndex = (i + 2)  -- i = -1 → 1번칸, 0 → 2번칸, 1 → 3번칸
-        emptyPos = origin + vector(0, -3.3, 0)
-        break
-    end
-end
-
--- 위쪽 3칸이 차면 아래쪽 첫 번째 칸에서 드로우 시작
-if not emptyIndex then
-    for i = -2, 1 do
-        local x = spacingX * i + spacingX / 2
-        local localOffset = rotateOffset(x, offsetZ_down)
+    -- 위쪽 3칸 (1 ~ 3)
+    for i = -1, 1 do
+        local localOffset = rotateOffset(spacingX * i, offsetZ_up, angleY)
         local origin = center + localOffset
-        local hitList2 = Physics.cast({
-            origin       = origin + vector(0, -3, 0),
+        local hitList = Physics.cast({
+            origin       = origin + Vector(0, -3, 0),
             direction    = {0, -1, 0},
             type         = 3,
             size         = {1, 1, 1},
@@ -640,101 +555,125 @@ if not emptyIndex then
         })
 
         filled = false
-        for _, v in ipairs(hitList2) do 
+        for _, v in pairs(hitList) do
             if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
                 filled = true
                 break
-            end 
+            end
         end
 
-        -- 비어있는 칸을 찾으면 emptyIndex를 설정
         if not filled then
-            emptyIndex = (i + 5)  -- i = -2 → 3번 + 1 = 4, -1 → 5, 0 → 6, 1 → 7
-            emptyPos = origin + vector(0, -3.3, 0)
-            break
-        end
-    end
-end
-
-for i = -2, 2 do  -- 5개 칸 (i = -2, -1, 0, 1, 2)
-    local x = spacingX * i  -- x 값 조정: 좌우 간격 유지
-    local localOffset = rotateOffset(x, offsetZ_down)
-    local origin = handTransform.position + forward * 11 + localOffset
-    local hitList3 = Physics.cast({
-        origin       = origin + vector(0, -3, 0),
-        direction    = {0, -1, 0},
-        type         = 3,
-        size         = {1, 1, 1},
-        orientation  = {0, 0, 0},
-        max_distance = 3,
-        debug        = false,
-    })
-
-    filled2 = false
-    for _, v in ipairs(hitList3) do 
-        if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-            filled2 = true
+            emptyIndex = (i + 2)  -- i = -1 → 1번칸, 0 → 2번칸, 1 → 3번칸
+            emptyPos = origin + Vector(0, -3.3, 0)
             break
         end
     end
 
-    if not filled2 then
-        emptyIndex2 = (i + 2)  -- i = -1 → 1번칸, 0 → 2번칸, 1 → 3번칸
-        emptyPos2 = origin + vector(0, -3.3, 0)
-        break
+    -- 위쪽 3칸이 차면 아래쪽 첫 번째 칸에서 드로우 시작
+    if not emptyIndex then
+        for i = -2, 1 do
+            local x = spacingX * i + spacingX / 2
+            local localOffset = rotateOffset(x, offsetZ_down, angleY)
+            local origin = center + localOffset
+            local hitList2 = Physics.cast({
+                origin       = origin + Vector(0, -3, 0),
+                direction    = {0, -1, 0},
+                type         = 3,
+                size         = {1, 1, 1},
+                orientation  = {0, 0, 0},
+                max_distance = 3,
+                debug        = false,
+            })
+
+            filled = false
+            for _, v in ipairs(hitList2) do
+                if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
+                    filled = true
+                    break
+                end
+            end
+
+            -- 비어있는 칸을 찾으면 emptyIndex를 설정
+            if not filled then
+                emptyIndex = (i + 5)  -- i = -2 → 3번 + 1 = 4, -1 → 5, 0 → 6, 1 → 7
+                emptyPos = origin + Vector(0, -3.3, 0)
+                break
+            end
+        end
     end
-end
+
+    for i = -2, 2 do  -- 5개 칸 (i = -2, -1, 0, 1, 2)
+        local x = spacingX * i  -- x 값 조정: 좌우 간격 유지
+        local localOffset = rotateOffset(x, offsetZ_down, angleY)
+        local origin = handTransform.position + forward * 11 + localOffset
+        local hitList3 = Physics.cast({
+            origin       = origin + Vector(0, -3, 0),
+            direction    = {0, -1, 0},
+            type         = 3,
+            size         = {1, 1, 1},
+            orientation  = {0, 0, 0},
+            max_distance = 3,
+            debug        = false,
+        })
+
+        filled2 = false
+        for _, v in ipairs(hitList3) do
+            if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
+                filled2 = true
+                break
+            end
+        end
+
+        if not filled2 then
+            emptyIndex2 = (i + 2)  -- i = -1 → 1번칸, 0 → 2번칸, 1 → 3번칸
+            emptyPos2 = origin + Vector(0, -3.3, 0)
+            break
+        end
+    end
+
     local drawcard = scan()
-if isempty then
-    
-    local discardCheck = Physics.cast({
-        origin       = {2.06, 1.49, 1.07},
-        direction    = {0, -1, 0},
-        type         = 3,
-        size         = {1, 1, 1},
-        max_distance = 3,
-    })
-
-    for _, v in ipairs(discardCheck) do 
-        if v.hit_object.type == "Deck" then
-            
-            local discardDeck = v.hit_object
-
-            -- draw pile 위치로 이동
-            discardDeck.setPositionSmooth({-1.60, 2.3, 1.13}, false, true)
-            discardDeck.setRotation({0, 180, 180})
-
-            wait(0.5)
-            discardDeck.shuffle()
-
-            wait(0.5)
-
-            -- 다시 scan
-            drawcard = scan()
-
-            break
-        end
-    end
-
     if isempty then
-        return 1
+        local discardCheck = Physics.cast({
+            origin       = {2.06, 1.49, 1.07},
+            direction    = {0, -1, 0},
+            type         = 3,
+            size         = {1, 1, 1},
+            max_distance = 3,
+        })
+
+        for _, v in ipairs(discardCheck) do
+            if v.hit_object.type == "Deck" then
+                local discardDeck = v.hit_object
+
+                -- draw pile 위치로 이동
+                discardDeck.setPositionSmooth({-1.60, 2.3, 1.13}, false, true)
+                discardDeck.setRotation({0, 180, 180})
+                discardDeck.shuffle()
+                -- 다시 scan
+                drawcard = scan()
+
+                break
+            end
+        end
+
+        -- isempty will be updated in scan()
+        if isempty then return end
     end
-end
+
     if drawcard.hasTag("special") then
-        drawcard.setPositionSmooth(emptyPos2,false,false)
-        drawcard.setRotation(Vector(0, handTransform.rotation.y+180, 0))
+        drawcard.setPositionSmooth(emptyPos2, false, false)
+        drawcard.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
     else
         drawcard.setPositionSmooth(emptyPos,false,false)
-        drawcard.setRotation(Vector(0, handTransform.rotation.y+180, 0))
+        drawcard.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
     end
 
     if drawcard.hasTag("seven") then
-        bust(hit_o,Pcolor,hit_a)
+        bust(object, color, alt)
         local firstSlotOffset = rotateOffset(spacingX * -1, offsetZ_up)
-        local firstSlotPos = center + firstSlotOffset + vector(0, -3.3, 0)
-        drawcard.setPositionSmooth(firstSlotPos,false,false)
-        drawcard.setRotation(Vector(0, handTransform.rotation.y+180, 0))
-
+        local firstSlotPos = center + firstSlotOffset + Vector(0, -3.3, 0)
+        drawcard.setPositionSmooth(firstSlotPos, false, false)
+        drawcard.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
     end
 
     isDeck = false
@@ -748,7 +687,7 @@ end
         debug        = false,
     })
 
-    for _, v in ipairs(hitcheck) do 
+    for _, v in pairs(hitcheck) do
         if v.hit_object.type == "Deck" then
             isDeck = true
         end
@@ -763,22 +702,28 @@ end
             max_distance = 3,
             debug        = false,
         })
-    
-        for _, v in ipairs(hitcheck2) do 
+
+        for _, v in pairs(hitcheck2) do
             if v.hit_object.type == "Deck" then
                 v.hit_object.setPositionSmooth({-1.60, 2.3, 1.13}, false, true)
                 v.hit_object.setRotation({0, 180, 180})
-                wait(0.5)
                 v.hit_object.shuffle()
             end
         end
     end
-return 1
 end
+
+-- Rotate Offset
+function rotateOffset(x, z, Yangle)
+    local rx = math.cos(-Yangle) * x - math.sin(-Yangle) * z
+    local rz = math.sin(-Yangle) * x + math.cos(-Yangle) * z
+    return Vector(rx, 0, rz)
+end
+
 function scan()
     isempty = true
     deckscan = Physics.cast({
-        origin       = {-2,2,1},
+        origin       = {-2, 2, 1},
         direction    = {0, -1, 0},
         type         = 3,
         size         = {1, 1, 1},
@@ -788,7 +733,7 @@ function scan()
     })
 
     for _,v in ipairs(deckscan) do
-        if v.hit_object.type == "Deck"  then
+        if v.hit_object.type == "Deck" then
             isempty = false
 
             return v.hit_object.takeObject()
@@ -801,8 +746,8 @@ function scan()
 end
 
 function scan2()
-    deckscan = Physics.cast({
-        origin       = {-2,2,1},
+    local deckscan = Physics.cast({
+        origin       = {-2, 2, 1},
         direction    = {0, -1, 0},
         type         = 3,
         size         = {1, 1, 1},
@@ -811,9 +756,73 @@ function scan2()
         debug        = false,
     })
 
-    for _,v in ipairs(deckscan) do
+    for _, v in pairs(deckscan) do
         if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
             return v.hit_object
         end
     end
+end
+
+function CreateScoreBoard()
+    local xml = [[
+    <Panel id="scoreHUD"
+       width="260"
+       height="20"
+
+       anchorMin="1 0.5"
+       anchorMax="1 0.5"
+       rectAlignment="MiddleRight"
+
+       offsetXY="-10 0"
+
+       allowDragging="true"
+       color="#000000AA"
+       padding="1"
+       autoLayout="Vertical">
+
+        <Text id="scoreList" text="" fontSize="16" color="#FFFFFF" alignment="UpperLeft"/>
+    </Panel>
+    ]]
+    UI.setXml(xml)
+end
+
+function GetTotalScore(color)
+    for _, v in pairs(getObjects()) do
+        if v.hasTag("score") and v.hasTag(color) then
+            local inputs = v.getInputs()
+            if inputs[1] then
+                return tonumber(inputs[1].value) or 0
+            end
+        end
+    end
+    return 0
+end
+
+function UpdateScoreBoard()
+    local txt = ""
+    local players = {}
+
+    for i, color in ipairs(PLAYER_COLORS) do
+        if Player[color].seated then
+            local roundScore = score[i] or 0
+            local gameScore = GetTotalScore(color)
+            local potentialScore = gameScore + roundScore
+
+            table.insert(players, {
+                name = Player[color].steam_name,
+                roundScore = roundScore,
+                gameScore = gameScore,
+                potentialScore = potentialScore
+            })
+        end
+    end
+
+    table.sort(players, function(a, b) return a.potentialScore > b.potentialScore end)
+
+    for _, player in pairs(players) do
+        txt = ("%s%s: %d | %d (%d)\n"):format(txt, player.name, player.roundScore, player.gameScore, player.potentialScore)
+    end
+
+    UI.setAttribute("scoreHUD", "height", #players * 20) -- default line height: 20px
+    UI.setValue("scoreList", txt)
 end

@@ -512,7 +512,8 @@ end
 
 function stay(object, color, alt)
     if alt then return false end
-    if hasBeenPewd then return false end
+    if isbase and hasBeenPewd then return false end
+    --^ quick workaround for vengeance mode until its fully implemented, since you can draw and stay with a lucky 13
 
     if isbase then
         bust(_, color) -- Call bust function to reset player cards
@@ -555,7 +556,8 @@ end
 local lastHit = os.time()
 function hit(object, color, alt)
     if alt then return false end
-    if hasBeenPewd then return false end
+    if isbase and hasBeenPewd then return false end
+    --^ quick workaround for vengeance mode until its fully implemented, since you can draw and stay with a lucky 13
 
     if os.time() - lastHit < 0.5 then return end
     lastHit = os.time()

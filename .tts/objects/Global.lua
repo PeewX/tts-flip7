@@ -83,9 +83,10 @@ function onLoad()
         font_size      = 700
     })
 
-    for _, v in pairs(PLAYER_COLORS) do
-        PlayerData[v] = {
-            status = PlayerStatus.Default
+    for _, playerColor in pairs(PLAYER_COLORS) do
+        PlayerData[playerColor] = {
+            status = PlayerStatus.Default,
+            scoreTile = getObjectsWithAllTags({"score", playerColor})[1]
         }
     end
 
@@ -180,38 +181,36 @@ function startgame()
         font_color     = "Black",
         font_size      = 900*Bound.size.z
     })
-    for _,v in pairs(getObjects()) do
-        if v.hasTag("score") then
-            v.createButton({
-                click_function = "bust",
+
+    for _, v in pairs(PlayerData) do
+        v.scoreTile.createButton({
+            click_function = "bust",
+            function_owner = self,
+            label          = "Bust",
+            position       = {0, 0, 3/Scale.z},
+            rotation       = {0, 0, 0},
+            scale          = {1.8/Scale.x, 1, 0.8/Scale.z},
+            width          = 650*Bound.size.x,
+            height         = 600*Bound.size.z,
+            color          = {0.8, 0.6, 0.6},
+            font_color     = "Black",
+            font_size      = 900*Bound.size.z
+        })
+        if isbrutal then
+            v.scoreTile.createButton({
+                click_function = "minus",
                 function_owner = self,
-                label          = "Bust",
-                position       = {0, 0, 3/Scale.z},
-                rotation       = {0, 0, 0},
-                scale          = {1.8/Scale.x, 1, 0.8/Scale.z},
-                width          = 650*Bound.size.x,
+                label          = "-15",
+                position       = {8/Scale.x,0,3/Scale.z},
+                rotation       = {0,0,0},
+                scale          = {1.8/Scale.x,1,0.8/Scale.z},
+                width          = 400*Bound.size.x,
                 height         = 600*Bound.size.z,
-                color          = {0.8, 0.6, 0.6},
+                color          = {0.8,0.6,0.6},
                 font_color     = "Black",
                 font_size      = 900*Bound.size.z
             })
-            if isbrutal then
-                v.createButton({
-                    click_function = "minus",
-                    function_owner = self,
-                    label          = "-15",
-                    position       = {8/Scale.x,0,3/Scale.z},
-                    rotation       = {0,0,0},
-                    scale          = {1.8/Scale.x,1,0.8/Scale.z},
-                    width          = 400*Bound.size.x,
-                    height         = 600*Bound.size.z,
-                    color          = {0.8,0.6,0.6},
-                    font_color     = "Black",
-                    font_size      = 900*Bound.size.z
-                })
-            end
         end
-
     end
 
     if isbase == false then
@@ -266,13 +265,12 @@ function resetGame(_, color, _)
     if not (Player[color].host or Player[color].promoted) then return end
 
 	-- reset points
-	for _, v in pairs(getObjects()) do
-        if v.hasTag("score") then
-            v.editInput({
-                index = 0,
-                value = 0,
-            })
-        end
+	for _, v in pairs(PlayerData) do
+        v.status = PlayerStatus.Default
+        v.scoreTile.editInput({
+            index = 0,
+            value = 0,
+        })
     end
 
     -- put all cards back
@@ -317,41 +315,31 @@ end
 
 
 function newround()
-    for _, color in pairs(PLAYER_COLORS) do
-        PlayerData[color].status = PlayerStatus.Default
-    end
-
     deck2 = scan2()
     posCount = 0.1
-    for i,v in ipairs(getObjects()) do
+    for _, v in ipairs(getObjects()) do
         if v ~= deck2 and (v.type=="Deck" or v.type=="Card") then
             v.setPosition({2.06, 1.49+posCount, 1.07})
             v.setRotation({0,180,0})
             posCount = posCount + 0.1
         end
-    end
 
-    for i,v in ipairs(getObjects()) do
         if v.hasTag("stay") then
             v.destruct()
         end
     end
-    for _,c in ipairs(PLAYER_COLORS) do
-        for i,v in ipairs(getObjects()) do
-            if v.getGMNotes() == c then
-            Playerscore = getScore(v)
-            end
-        end
-        for i,v in ipairs(getObjects()) do
-            if v.hasTag("score") and v.hasTag(c) then
-                Score1 = v.getInputs()[1].value
-                Score2 = Score1 + Playerscore
-                v.editInput({
-                    index          = 0,
-                    value          = Score2,
-                })
-            end
-        end
+
+    for _, color in pairs(PLAYER_COLORS) do
+        local playerData = PlayerData[color]
+        playerData.status = PlayerStatus.Default
+
+        -- update score
+        Score1 = playerData.scoreTile.getInputs()[1].value
+        Score2 = Score1 + getScore(playerData.scriptZone)
+        playerData.scoreTile.editInput({
+            index          = 0,
+            value          = Score2,
+        })
     end
 end
 
@@ -416,7 +404,7 @@ function countItems()
                 mult[i] = tonumber(description)  -- convert it to a number
 
             elseif scriptZoneObject.hasTag("special") and scriptZoneObject.is_face_down == false then
-                
+                -- TODO: handle special cards
             end
         end
 
@@ -529,26 +517,18 @@ function stay(object, color, alt)
     --^ quick workaround for vengeance mode until its fully implemented, since you can draw and stay with a lucky 13
     if IsPlayerDoneWithRound(color) then return false end
 
+    local playerData = PlayerData[color]
+
     if isbase then
         bust(_, color) -- Call bust function to reset player cards
 
-        local Playerscore = 0
-        for _, v in pairs(getObjects()) do
-            if v.getGMNotes() == color then
-                Playerscore = getScore(v)
-            end
-        end
-
-        for _, v in pairs(getObjects()) do
-            if v.hasTag("score") and v.hasTag(color) then
-                Score1 = v.getInputs()[1].value
-                Score2 = Score1 + Playerscore
-                v.editInput({
-                    index          = 0,
-                    value          = Score2,
-                })
-            end
-        end
+        -- update score
+        Score1 = playerData.scoreTile.getInputs()[1].value
+        Score2 = Score1 + getScore(playerData.scriptZone)
+        playerData.scoreTile.editInput({
+            index          = 0,
+            value          = Score2,
+        })
     else
         -- 플레이어 기준 위치 및 회전
         local handTransform = Player[color].getHandTransform()
@@ -566,7 +546,7 @@ function stay(object, color, alt)
         stayToken.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
     end
 
-    PlayerData[color].status = PlayerStatus.Stayed
+    playerData.status = PlayerStatus.Stayed
 end
 
 local lastHit = os.time()
@@ -721,7 +701,7 @@ function hit(object, color, alt)
 
     if drawcard.hasTag("seven") then
         bust(object, color, alt)
-        local firstSlotOffset = rotateOffset(spacingX * -1, offsetZ_up)
+        local firstSlotOffset = rotateOffset(spacingX * -1, offsetZ_up, angleY)
         local firstSlotPos = center + firstSlotOffset + Vector(0, -3.3, 0)
         drawcard.setPositionSmooth(firstSlotPos, false, false)
         drawcard.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
@@ -820,13 +800,9 @@ function scan2()
 end
 
 function GetTotalScore(color)
-    for _, v in pairs(getObjects()) do
-        if v.hasTag("score") and v.hasTag(color) then
-            local inputs = v.getInputs()
-            if inputs[1] then
-                return tonumber(inputs[1].value) or 0
-            end
-        end
+    local inputs = PlayerData[color].scoreTile.getInputs()
+    if inputs[1] then
+        return tonumber(inputs[1].value) or 0
     end
     return 0
 end

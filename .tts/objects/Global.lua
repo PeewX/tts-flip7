@@ -37,7 +37,7 @@ function onLoad()
         function_owner = self,
         label          = "Start Game",
         position       = {0, 0.5, -2/Scale.z},
-        rotation       = {0,180,0},
+        rotation       = {0, 180, 0},
         scale          = {1/Scale.x, 1, 1/Scale.z},
         width          = 4000,
         height         = 1000,
@@ -47,26 +47,27 @@ function onLoad()
     })
 
     StartBtn.createButton({
-        click_function = "selection",
-        label="<",
-        function_owner = self,
-        width = 700,
-        height = 1000,
-        position = {-9.3/Scale.x, 0.5, 3/Scale.z},
-        scale = {1/Scale.x, 1, 1/Scale.z},
-        font_size = 549,
-        color = {0.9, 0.9, 0.9, 1},
+        click_function  = "selection",
+        label           = "<",
+        function_owner  = self,
+        width           = 700,
+        height          = 1000,
+        position        = {-9.3/Scale.x, 0.5, 3/Scale.z},
+        scale           = {1/Scale.x, 1, 1/Scale.z},
+        font_size       = 549,
+        color           = {0.9, 0.9, 0.9, 1},
     })
+
     StartBtn.createButton({
-        click_function = "selection",
-        label=">",
-        function_owner = self,
-        width = 700,
-        height = 1000,
-        position = {9.3/Scale.x, 0.5, 3/Scale.z},
-        scale = {1/Scale.x, 1, 1/Scale.z},
-        font_size = 549,
-        color = {0.9, 0.9, 0.9, 1},
+        click_function  = "selection",
+        label           = ">",
+        function_owner  = self,
+        width           = 700,
+        height          = 1000,
+        position        = {9.3/Scale.x, 0.5, 3/Scale.z},
+        scale           = {1/Scale.x, 1, 1/Scale.z},
+        font_size       = 549,
+        color           = {0.9, 0.9, 0.9, 1},
     })
 
     StartBtn.createButton({
@@ -213,12 +214,12 @@ function startgame()
                 click_function = "minus",
                 function_owner = self,
                 label          = "-15",
-                position       = {8/Scale.x,0,3/Scale.z},
-                rotation       = {0,0,0},
-                scale          = {1.8/Scale.x,1,0.8/Scale.z},
+                position       = {8/Scale.x, 0, 3/Scale.z},
+                rotation       = {0, 0, 0},
+                scale          = {1.8/Scale.x, 1, 0.8/Scale.z},
                 width          = 400*Bound.size.x,
                 height         = 600*Bound.size.z,
-                color          = {0.8,0.6,0.6},
+                color          = {0.8, 0.6, 0.6},
                 font_color     = "Black",
                 font_size      = 900*Bound.size.z
             })
@@ -324,7 +325,6 @@ function selection()
     deck2.setRotation({0, 180, 180})
     deck2.shuffle()
 end
-
 
 function newround()
     deck2 = scan2()

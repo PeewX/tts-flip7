@@ -821,6 +821,8 @@ function UpdateScoreBoard()
             local textColor = "#FFFFFF"
             if PlayerData[color].state == "Pewd" then
                 textColor = "#FF8888"
+            elseif potentialScore >= 200 then
+                textColor = "#88CC88"
             end
 
             table.insert(players, {

@@ -133,9 +133,11 @@ function onLoad()
     baseBag = getObjectFromGUID("314599")
     expBag = getObjectFromGUID("ff1e2d")
     stayBag = getObjectFromGUID("5e7ab9")
+    bustedBag = getObjectFromGUID("5e7ab8")
     baseBag.interactable = false
     expBag.interactable = false
     stayBag.interactable = false
+    bustedBag.interactable = false
 
     -- Init deck with base game
     deck2 = scan2()
@@ -522,6 +524,12 @@ function bust(object, color, alt)
         end
     end
 
+    -- add busted marker in player zone
+    local player3DData = PlayerData[color].positionData
+    local bustedToken = bustedBag.takeObject()
+    bustedToken.setPosition(player3DData.center + rotateOffset(0, 6, player3DData.angleY))
+    bustedToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
+
     PlayerData[color].status = PlayerStatus.Busted
 end
 
@@ -547,9 +555,8 @@ function stay(object, color, alt)
         })
     end
 
-    local player3DData = PlayerData[color].positionData
-
     -- add stay marker in player zone
+    local player3DData = PlayerData[color].positionData
     local stayToken = stayBag.takeObject()
     stayToken.setPosition(player3DData.center + rotateOffset(0, 6, player3DData.angleY))
     stayToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))

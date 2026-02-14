@@ -84,16 +84,26 @@ function onLoad()
     })
 
     for _, playerColor in pairs(PLAYER_COLORS) do
+        local handTransform = Player[playerColor].getHandTransform()
+        local angleY = math.rad(handTransform.rotation.y)
+        local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
+        local center = handTransform.position + forward * 16
+
         PlayerData[playerColor] = {
             status = PlayerStatus.Default,
-            scoreTile = getObjectsWithAllTags({"score", playerColor})[1]
+            scoreTile = getObjectsWithAllTags({"score", playerColor})[1],
+            positionData = {
+                handTransform = handTransform,
+                angleY = angleY,
+                forward = forward,
+                center = center
+            }
         }
     end
 
-    scriptzone = {}
+    -- create bust buttons and save scriptingZone to PlayerData
     for _, v in pairs(getObjects()) do
         if v.type == "Scripting" then
-            table.insert(scriptzone, v)
             v.createButton({
                 click_function = "none",
                 function_owner = self,
@@ -145,10 +155,10 @@ end
 function brutal()
     if isbrutal then
         isbrutal = false
-        StartBtn.editButton({index=4,label="Brutal Mode [ ]"})
+        StartBtn.editButton({index=4, label="Brutal Mode [ ]"})
     else
         isbrutal = true
-        StartBtn.editButton({index=4,label="Brutal Mode [✓]"})
+        StartBtn.editButton({index=4, label="Brutal Mode [✓]"})
     end
 end
 
@@ -262,7 +272,10 @@ function startgame()
 end
 
 function resetGame(_, color, _)
-    if not (Player[color].host or Player[color].promoted) then return end
+    if not Player[color].admin then
+        broadcastToColor("You need to be promoted to use this feature", color)
+        return
+    end
 
     -- reset player specific data
 	for _, v in pairs(PlayerData) do
@@ -289,29 +302,25 @@ end
 function selection()
     if isbase then
         isbase = false
-        isbrutal = false
         deck2.destruct()
         deck2 = expBag.takeObject()
-        deck2.setPosition({-1.60, 2.1, 1.13})
-        deck2.setRotation({0,180,180})
-        deck2.shuffle()
 
-        StartBtn.editButton({index=0,label="Flip 7 With A Vengeance"})
-        StartBtn.editButton({index=4,label="Brutal Mode [ ]"})
-
+        StartBtn.editButton({index=0, label="Flip 7 With A Vengeance"})
+        StartBtn.editButton({index=4, label="Brutal Mode [ ]"})
     else
         isbase = true
-        isbrutal = false
         deck2.destruct()
         deck2 = baseBag.takeObject()
-        deck2.setPosition({-1.60, 2.1, 1.13})
-        deck2.setRotation({0,180,180})
-        deck2.shuffle()
 
-        StartBtn.editButton({index=0,label="Flip 7"})
-        StartBtn.editButton({index=4,label=""})
-
+        StartBtn.editButton({index=0, label="Flip 7"})
+        StartBtn.editButton({index=4, label=""})
     end
+
+    isbrutal = false
+
+    deck2.setPosition({-1.60, 2.1, 1.13})
+    deck2.setRotation({0, 180, 180})
+    deck2.shuffle()
 end
 
 
@@ -347,11 +356,11 @@ end
 function minus(o,p,c)
     Score1 = o.getInputs()[1].value
     Score2 = Score1 + -15
-    if isbrutal == false then
-        if Score2 < 0 then
-            Score2 = 0
-        end
+
+    if isbrutal == false and Score2 < 0 then
+        Score2 = 0
     end
+
     o.editInput({
         index          = 0,
         value          = Score2,
@@ -369,10 +378,10 @@ function countItems()
         countNumbercard[i] = 0
     end
 
-    for i, v in ipairs(scriptzone) do
+    for i, color in ipairs(PLAYER_COLORS) do
+        local v = PlayerData[color].scriptZone
 		local seenNumbers = {}
         local scriptZoneObjects = v.getObjects() -- get objects already in the zone
-        local color = v.getGMNotes()
         local hasLuckyThirteen = false
 
         -- handle the lucky thirteen state before we iterate through all cards
@@ -425,20 +434,18 @@ function countItems()
 
         score[i] = numberSum[i]*mult[i]+plusSum[i]
         if countNumbercard[i] == 7 then
-            score[i] = score[i] +15
+            score[i] = score[i] + 15
         end
 
-        -- is this correct? Should only apply to brutal rules
+        -- only the special vengeance mode 0 card has the tag 'zero'
         for _, scriptZoneObject in ipairs(scriptZoneObjects) do
             if scriptZoneObject.hasTag("zero") and countNumbercard[i] < 7 then
                 score[i] = 0
             end
         end
 
-        if isbrutal == false then
-            if score[i] < 0 then
-                score[i] = 0
-            end
+        if isbrutal == false and score[i] < 0 then
+            score[i] = 0
         end
 
         v.editButton({label = score[i]})
@@ -476,19 +483,14 @@ function getScore(zone)
                  numberSum = numberSum + number
             end
             countNumbercard = countNumbercard +1
-
         end
-    end
 
-    for _, object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
         if object.hasTag("plus") and object.is_face_down == false then
             local description = object.getDescription() -- get the description
             local plus = tonumber(description)  -- convert it to a number
             plusSum = plusSum + plus
         end
-    end
 
-    for _, object in ipairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
         if object.hasTag("mult") and object.is_face_down == false then
             local description = object.getDescription() -- get the description
             mult = tonumber(description) or 0 -- convert it to a number
@@ -500,17 +502,18 @@ function getScore(zone)
         score = score + 15
     end
 
-    if isbrutal == false then
-        if score < 0 then
-            score = 0
-        end
+    if isbrutal == false and score < 0 then
+        score = 0
     end
 
     return score
 end
 
 function bust(object, color, alt)
-    if IsPlayerDoneWithRound(color) then return false end
+    if IsPlayerDoneWithRound(color) then
+        broadcastToColor("Please wait until a new round has started", color)
+        return false
+    end
 
     for _, v in pairs(PlayerData[color].scriptZone.getObjects()) do
         if v.type == "Deck" or v.type == "Card" then
@@ -525,7 +528,10 @@ end
 function stay(object, color, alt)
     if alt then return false end
     if hasBeenPewd then return false end
-    if IsPlayerDoneWithRound(color) then return false end
+    if IsPlayerDoneWithRound(color) then
+        broadcastToColor("Please wait until a new round has started", color)
+        return false
+    end
 
     local playerData = PlayerData[color]
 
@@ -541,17 +547,12 @@ function stay(object, color, alt)
         })
     end
 
-    -- 플레이어 기준 위치 및 회전
-    local handTransform = Player[color].getHandTransform()
-    -- 회전 각도 (플레이어 기준 정방향)
-    local angleY = math.rad(handTransform.rotation.y)
-    local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
-    local center = handTransform.position + forward * 16
+    local player3DData = PlayerData[color].positionData
 
     -- add stay marker in player zone
     local stayToken = stayBag.takeObject()
-    stayToken.setPosition(center + rotateOffset(0, 6, angleY))
-    stayToken.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
+    stayToken.setPosition(player3DData.center + rotateOffset(0, 6, player3DData.angleY))
+    stayToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
 
     playerData.status = PlayerStatus.Stayed
 end
@@ -560,15 +561,19 @@ local lastHit = os.time()
 function hit(object, color, alt)
     if alt then return false end
     if hasBeenPewd then return false end
-    if IsPlayerDoneWithRound(color) then return false end
+    if IsPlayerDoneWithRound(color) then
+        broadcastToColor("Please wait until a new round has started", color)
+        return false
+    end
 
     if os.time() - lastHit < 0.5 then return end
     lastHit = os.time()
 
-    local handTransform = Player[color].getHandTransform()
-    local angleY = math.rad(handTransform.rotation.y)
-    local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
-    local center = handTransform.position + forward * 16
+    local player3DData = PlayerData[color].positionData
+    local handTransform = player3DData.handTransform
+    local angleY = player3DData.angleY
+    local forward = player3DData.forward
+    local center = player3DData.center
 
     local spacingX = 3
     local offsetZ_up = 2
@@ -774,7 +779,7 @@ function scan()
         debug        = false,
     })
 
-    for _,v in ipairs(deckscan) do
+    for _, v in ipairs(deckscan) do
         if v.hit_object.type == "Deck" then
             isempty = false
 

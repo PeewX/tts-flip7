@@ -1,3 +1,11 @@
+-- ENUMS
+PlayerStatus = {
+    Default = 0,
+    ActionRequired = 1,
+    Stayed = 2,
+    Busted = 3
+}
+
 -- Globals
 PLAYER_COLORS = {"Yellow", "Red", "White", "Orange", "Blue", "Pink", "Green", "Purple"}
 PlayerData = {}
@@ -76,7 +84,9 @@ function onLoad()
     })
 
     for _, v in pairs(PLAYER_COLORS) do
-        PlayerData[v] = {}
+        PlayerData[v] = {
+            status = PlayerStatus.Default
+        }
     end
 
     scriptzone = {}
@@ -307,8 +317,12 @@ end
 
 
 function newround()
-     deck2 = scan2()
-     posCount = 0.1
+    for _, color in pairs(PLAYER_COLORS) do
+        PlayerData[color].status = PlayerStatus.Default
+    end
+
+    deck2 = scan2()
+    posCount = 0.1
     for i,v in ipairs(getObjects()) do
         if v ~= deck2 and (v.type=="Deck" or v.type=="Card") then
             v.setPosition({2.06, 1.49+posCount, 1.07})
@@ -385,7 +399,7 @@ function countItems()
                             local player = Player[color]
                             local broadcastMessage = ("%s got pewd!"):format(player.steam_name or player.color)
 							broadcastToAll(broadcastMessage, player.color)
-                            PlayerData[color].state = "Pewd"
+                            PlayerData[color].status = PlayerStatus.ActionRequired
 							hasBeenPewd = true
 						end
 					end
@@ -406,8 +420,8 @@ function countItems()
             end
         end
 
-        if not hasDuplicateNumber and PlayerData[color].state == "Pewd" then
-            PlayerData[color].state = ""
+        if not hasDuplicateNumber and PlayerData[color].status == PlayerStatus.ActionRequired then
+            PlayerData[color].status = PlayerStatus.Default
         end
 
         score[i] = numberSum[i]*mult[i]+plusSum[i]
@@ -497,23 +511,23 @@ function getScore(zone)
 end
 
 function bust(object, color, alt)
-    for _, scriptZoneObject in pairs(scriptzone) do
-        if scriptZoneObject.getGMNotes() == color then
-            for _, v in pairs(scriptZoneObject.getObjects()) do
-                if v.type == "Deck" or v.type == "Card" then
-                    v.setPosition({2.06, 2.3, 1.07})
-                    v.setRotation({0, 180, 0})
-                end
-            end
-            break
+    if IsPlayerDoneWithRound(color) then return false end
+
+    for _, v in pairs(PlayerData[color].scriptZone.getObjects()) do
+        if v.type == "Deck" or v.type == "Card" then
+            v.setPosition({2.06, 2.3, 1.07})
+            v.setRotation({0, 180, 0})
         end
     end
+
+    PlayerData[color].status = PlayerStatus.Busted
 end
 
 function stay(object, color, alt)
     if alt then return false end
     if isbase and hasBeenPewd then return false end
     --^ quick workaround for vengeance mode until its fully implemented, since you can draw and stay with a lucky 13
+    if IsPlayerDoneWithRound(color) then return false end
 
     if isbase then
         bust(_, color) -- Call bust function to reset player cards
@@ -551,6 +565,8 @@ function stay(object, color, alt)
         stayToken.setPosition(center + rotateOffset(0, 6, angleY))
         stayToken.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
     end
+
+    PlayerData[color].status = PlayerStatus.Stayed
 end
 
 local lastHit = os.time()
@@ -558,6 +574,7 @@ function hit(object, color, alt)
     if alt then return false end
     if isbase and hasBeenPewd then return false end
     --^ quick workaround for vengeance mode until its fully implemented, since you can draw and stay with a lucky 13
+    if IsPlayerDoneWithRound(color) then return false end
 
     if os.time() - lastHit < 0.5 then return end
     lastHit = os.time()
@@ -754,6 +771,11 @@ function rotateOffset(x, z, Yangle)
     return Vector(rx, 0, rz)
 end
 
+function IsPlayerDoneWithRound(color)
+    local playerStatus = PlayerData[color].status
+    return playerStatus == PlayerStatus.Busted or playerStatus == PlayerStatus.Stayed
+end
+
 function scan()
     isempty = true
     deckscan = Physics.cast({
@@ -819,10 +841,12 @@ function UpdateScoreBoard()
             local potentialScore = gameScore + roundScore
 
             local textColor = "#FFFFFF"
-            if PlayerData[color].state == "Pewd" then
+            if PlayerData[color].status == PlayerStatus.ActionRequired then
                 textColor = "#FF8888"
             elseif potentialScore >= 200 then
                 textColor = "#88CC88"
+            elseif IsPlayerDoneWithRound(color) then
+                textColor = "#AAAAAA"
             end
 
             table.insert(players, {

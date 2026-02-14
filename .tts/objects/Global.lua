@@ -517,12 +517,7 @@ function bust(object, color, alt)
         return false
     end
 
-    for _, v in pairs(PlayerData[color].scriptZone.getObjects()) do
-        if v.type == "Deck" or v.type == "Card" then
-            v.setPosition({2.06, 2.3, 1.07})
-            v.setRotation({0, 180, 0})
-        end
-    end
+    ResetPlayerCards(color)
 
     -- add busted marker in player zone
     local player3DData = PlayerData[color].positionData
@@ -544,7 +539,7 @@ function stay(object, color, alt)
     local playerData = PlayerData[color]
 
     if isbase then
-        bust(_, color) -- Call bust function to reset player cards
+        ResetPlayerCards(color)
 
         -- update score
         Score1 = playerData.scoreTile.getInputs()[1].value
@@ -772,6 +767,15 @@ end
 function IsPlayerDoneWithRound(color)
     local playerStatus = PlayerData[color].status
     return playerStatus == PlayerStatus.Busted or playerStatus == PlayerStatus.Stayed
+end
+
+function ResetPlayerCards(color)
+    for _, v in pairs(PlayerData[color].scriptZone.getObjects()) do
+        if v.type == "Deck" or v.type == "Card" then
+            v.setPosition({2.06, 2.3, 1.07})
+            v.setRotation({0, 180, 0})
+        end
+    end
 end
 
 function scan()

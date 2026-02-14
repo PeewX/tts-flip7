@@ -844,12 +844,15 @@ function UpdateScoreBoard()
     for _, p in ipairs(players) do
         rows = rows .. string.format([[
             <Row>
-                <Cell dontUseTableCellBackground="true"><Text text=" %s" fontSize="15" color="%s" alignment="MiddleLeft"/></Cell>
-                <Cell dontUseTableCellBackground="true"><Text text="%d" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
-                <Cell dontUseTableCellBackground="true"><Text text="%d" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
-                <Cell dontUseTableCellBackground="true"><Text text="(%d)" fontSize="15" color="%s" alignment="MiddleCenter"/></Cell>
+                <Defaults>
+                    <Text color="%s" />
+                </Defaults>
+                <Cell><Text text=" %s" alignment="MiddleLeft"/></Cell>
+                <Cell><Text text="%d" /></Cell>
+                <Cell><Text text="%d" /></Cell>
+                <Cell><Text text="(%d)" /></Cell>
             </Row>
-        ]], p.name, p.textColor, p.roundScore, p.textColor, p.gameScore, p.textColor, p.potentialScore, p.textColor)
+        ]], p.textColor, p.name, p.roundScore, p.gameScore, p.potentialScore)
     end
 
     local xml = string.format([[
@@ -865,12 +868,20 @@ function UpdateScoreBoard()
             color="#000000AA"
             cellPadding ="0">
 
-                <Row fontStyle="Bold">
-                    <Cell dontUseTableCellBackground="true"><Panel color="#000000AA"><Text text=" Player" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleLeft"/></Panel></Cell>
-                    <Cell dontUseTableCellBackground="true"><Panel color="#000000AA"><Text text="Round" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
-                    <Cell dontUseTableCellBackground="true"><Panel color="#000000AA"><Text text="Game" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
-                    <Cell dontUseTableCellBackground="true"><Panel color="#000000AA"><Text text="Total" fontSize="16" fontStyle="Bold" color="#FFFFFF" alignment="MiddleCenter"/></Panel></Cell>
+                <Defaults>
+                    <Cell dontUseTableCellBackground="true" />
+                    <Panel color="#000000AA" />
+                    <Text class="headerText" fontSize="16" fontStyle="Bold" color="#FFFFFF" />
+                    <Text fontSize="14" alignment="MiddleCenter" />
+                </Defaults>
+
+                <Row>
+                    <Cell><Panel><Text class="headerText" text=" Player" alignment="MiddleLeft"/></Panel></Cell>
+                    <Cell><Panel><Text class="headerText" text="Round" /></Panel></Cell>
+                    <Cell><Panel><Text class="headerText" text="Game" /></Panel></Cell>
+                    <Cell><Panel><Text class="headerText" text="Total" /></Panel></Cell>
                 </Row>
+
                 %s
             </TableLayout>
     ]], 40 + (#players * 24), rows)

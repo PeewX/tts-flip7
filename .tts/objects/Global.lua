@@ -529,22 +529,19 @@ function stay(object, color, alt)
             index          = 0,
             value          = Score2,
         })
-    else
-        -- 플레이어 기준 위치 및 회전
-        local handTransform = Player[color].getHandTransform()
-        -- 회전 각도 (플레이어 기준 정방향)
-        local angleY = math.rad(handTransform.rotation.y)
-        local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
-        local center = handTransform.position + forward * 16
-
-        local spacingX = 3
-        local offsetZ_up = 2
-        local offsetZ_down = -2
-
-        stayToken = stayBag.takeObject()
-        stayToken.setPosition(center + rotateOffset(0, 6, angleY))
-        stayToken.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
     end
+
+    -- 플레이어 기준 위치 및 회전
+    local handTransform = Player[color].getHandTransform()
+    -- 회전 각도 (플레이어 기준 정방향)
+    local angleY = math.rad(handTransform.rotation.y)
+    local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
+    local center = handTransform.position + forward * 16
+
+    -- add stay marker in player zone
+    local stayToken = stayBag.takeObject()
+    stayToken.setPosition(center + rotateOffset(0, 6, angleY))
+    stayToken.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
 
     playerData.status = PlayerStatus.Stayed
 end

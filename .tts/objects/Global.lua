@@ -264,9 +264,10 @@ end
 function resetGame(_, color, _)
     if not (Player[color].host or Player[color].promoted) then return end
 
-	-- reset points
+    -- reset player specific data
 	for _, v in pairs(PlayerData) do
         v.status = PlayerStatus.Default
+
         v.scoreTile.editInput({
             index = 0,
             value = 0,
@@ -372,14 +373,24 @@ function countItems()
 		local seenNumbers = {}
         local scriptZoneObjects = v.getObjects() -- get objects already in the zone
         local color = v.getGMNotes()
+        local hasLuckyThirteen = false
+
+        -- handle the lucky thirteen state before we iterate through all cards
+        -- this is necessary to handle edge cases, e.g. player lost lucky thirteen during the round
+        for _, scriptZoneObject in pairs(scriptZoneObjects) do
+            if scriptZoneObject.hasTag("thirteen") then
+                hasLuckyThirteen = true
+            end
+        end
 
         for _, scriptZoneObject in pairs(scriptZoneObjects) do -- key = 1|2|3|etc, object = actual TTS object
             if scriptZoneObject.hasTag("number") and scriptZoneObject.is_face_down == false then
                 local description = scriptZoneObject.getDescription() -- get the description
                 local number = tonumber(description)  -- convert it to a number
                 if(number ~= nil) then -- check if you actually get a number (tonumber returns nil if it isn't)
-					if not seenNumbers[number] then
-						seenNumbers[number] = true
+                    local seenNumberCount = seenNumbers[number] or 0
+					if seenNumberCount == 0 or (number == 13 and seenNumberCount == 1 and hasLuckyThirteen) then
+						seenNumbers[number] = seenNumberCount + 1
 						numberSum[i] = numberSum[i] + number
 					else
 						hasDuplicateNumber = true
@@ -513,8 +524,7 @@ end
 
 function stay(object, color, alt)
     if alt then return false end
-    if isbase and hasBeenPewd then return false end
-    --^ quick workaround for vengeance mode until its fully implemented, since you can draw and stay with a lucky 13
+    if hasBeenPewd then return false end
     if IsPlayerDoneWithRound(color) then return false end
 
     local playerData = PlayerData[color]
@@ -549,8 +559,7 @@ end
 local lastHit = os.time()
 function hit(object, color, alt)
     if alt then return false end
-    if isbase and hasBeenPewd then return false end
-    --^ quick workaround for vengeance mode until its fully implemented, since you can draw and stay with a lucky 13
+    if hasBeenPewd then return false end
     if IsPlayerDoneWithRound(color) then return false end
 
     if os.time() - lastHit < 0.5 then return end

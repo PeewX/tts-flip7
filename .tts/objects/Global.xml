@@ -1,1 +1,3 @@
-<!-- Xml UI. See documentation: https://api.tabletopsimulator.com/ui/introUI/ -->
+<Panel rectAlignment = "MiddleRight"  width = "320" height = "120" scale = "0.4 0.4 1" offsetXY= "-5 0">
+<Button onClick = "newgame" id = "newgame" text = "Reset" fontSize= "52" fontStyle = "Bold" color="#fdefe2" active="true" ></Button>
+</Panel>

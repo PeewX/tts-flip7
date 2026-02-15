@@ -5,8 +5,20 @@ function onLoad()
     NewroundBtn = getObjectFromGUID("4c4180")
     Scale = StartBtn.getScale()
     Bound = StartBtn.getBoundsNormalized()
-    
-    StartBtn.createButton({
+    FirstplayerToken = getObjectFromGUID("de0d25")
+    baseBag = getObjectFromGUID("314599")
+    expBag = getObjectFromGUID("ff1e2d")
+    stayBag = getObjectFromGUID("5e7ab9")
+    baseBag.interactable = false
+    expBag.interactable = false
+    stayBag.interactable = false
+    buttonSetup()
+
+
+end
+
+function buttonSetup()
+        StartBtn.createButton({
         click_function = "none",
         function_owner = self,
         label          = "Flip 7",
@@ -72,9 +84,14 @@ function onLoad()
     })    
 
     deck2 = scan2()
+    deck2.destruct()
+
+    deck2 = baseBag.takeObject()
+    deck2.setPosition({-1.60, 2.1, 1.13})
+    deck2.setRotation({0,180,180})
     deck2.shuffle()
 
-    pColors = {"Yellow","Red","White","Orange","Blue","Pink","Green","Purple"}
+    pColors = {"White","Yellow","Red","Purple","Green","Pink","Blue","Orange"}
     scriptzone ={}
     setupCount = 1
     for i,v in ipairs(getObjects()) do
@@ -111,13 +128,32 @@ function onLoad()
     countNumbercard = {}
     isbase = true
     isbrutal = false
-    baseBag = getObjectFromGUID("314599")
-    expBag = getObjectFromGUID("ff1e2d")
-    stayBag = getObjectFromGUID("5e7ab9")
-    baseBag.interactable = false
-    expBag.interactable = false
-    stayBag.interactable = false
+end
 
+function newgame()
+    posCount = 0.1
+    HitBtn.clearButtons()
+    StayBtn.clearButtons()
+    NewroundBtn.clearButtons()
+    Timer.destroy(timerID)
+    for i,v in ipairs(getObjects()) do
+        if v.hasTag("score") then
+            v.clearButtons()
+            v.editInput({
+            index          = 0,
+            value          = 0,
+         })
+        end
+        if v.type == "Scripting" then
+            v.clearButtons()
+        end
+    end
+    for _, v in ipairs(getObjects()) do 
+        if v.type == "Deck" or v.type == "Card" or v.hasTag("stay") then
+            v.destruct()
+        end
+    end
+    buttonSetup()
 end
 
 function none()
@@ -134,7 +170,13 @@ function brutal()
 end
 
 function startgame()
-        StartBtn.destruct()
+    Turns.enable = false
+    local seatedPlayers = getSeatedPlayers()
+    if #seatedPlayers == 0 then
+        broadcastToAll("No players seated")
+        return 
+    end
+        StartBtn.clearButtons()
     HitBtn.createButton({
         click_function = "hit",
         function_owner = self,
@@ -196,11 +238,16 @@ function startgame()
 
     end
 
-    if isbase == false then
+    --if isbase == false then
+        if isbase then
+            t = "Start the next round."
+        else
+            t= "Calculate the scores and start the next round."
+        end
         NewroundBtn.createButton({
             click_function = "newround",
             function_owner = self,
-            label          = "New Round",
+            label          = "Next Round",
             position       = {0/Scale.x,0.5,0/Scale.z},
             rotation       = {0,180,0},
             scale          = {1/Scale.x,1,1/Scale.z},
@@ -209,8 +256,38 @@ function startgame()
             color          = "White",
             font_color     = "Black",
             font_size      = 700,
-            tooltip        = "Calculate the scores and start the next round."
+            tooltip        = t
         })
+    --end
+    local found = false
+
+    local startIndex = math.random(1, 8)
+    currentIndex = startIndex
+
+    for i = 1, 8 do
+        local currentColor = pColors[currentIndex]
+        
+        for _, playerColor in ipairs(seatedPlayers) do
+            if playerColor == currentColor then
+                FP = currentColor
+                found = true
+                break 
+            end
+        end
+
+        if found then break end 
+
+        currentIndex = currentIndex % 8 + 1
+    end
+
+    broadcastToAll(FP.." is a starting player.",FP)
+    FirstplayerToken.setColorTint(FP)
+    for i,v in ipairs(getObjects()) do
+        if v.type == "Scripting" then
+            if v.getGMNotes() == FP then
+                FirstplayerToken.setPosition(v.positionToWorld({0.4,0.25,-1}))
+            end
+        end
     end
 end
 
@@ -246,6 +323,20 @@ end
 
 
 function newround()
+
+        if WAIT_newround then
+            return
+        else
+            WAIT_newround=true
+            Wait.time(function()
+                WAIT_newround = false
+            end,0.8)
+        end
+    local seatedPlayers = getSeatedPlayers()
+    if #seatedPlayers == 0 then
+        broadcastToAll("No players seated")
+        return 
+    end
      deck2 = scan2()
      posCount = 0.1
     for i,v in ipairs(getObjects()) do
@@ -261,24 +352,64 @@ function newround()
             v.destruct()
         end
     end
-    for _,c in ipairs(pColors) do
-        for i,v in ipairs(getObjects()) do
-            if v.getGMNotes()== c then
-            Playerscore = getScore(v)
-            end
-        end   
-        for i,v in ipairs(getObjects()) do
-            if v.hasTag("score") and v.hasTag(c) then
-                Score1 = v.getInputs()[1].value
-                Score2 = Score1 + Playerscore
-                v.editInput({
-                    index          = 0,
-                    value          = Score2,
-                })
+
+    if not isbase then
+        for _,c in ipairs(pColors) do
+            for i,v in ipairs(getObjects()) do
+                if v.getGMNotes()== c then
+                Playerscore = getScore(v)
+                end
+            end   
+            for i,v in ipairs(getObjects()) do
+                if v.hasTag("score") and v.hasTag(c) then
+                    Score1 = v.getInputs()[1].value
+                    Score2 = Score1 + Playerscore
+                    v.editInput({
+                        index          = 0,
+                        value          = Score2,
+                    })
+                end
             end
         end
     end
 
+    local found = false
+    if currentIndex<8 then
+        currentIndex = currentIndex+1
+    else
+        currentIndex = 1
+    end
+    for i = 1, 8 do
+        local currentColor = pColors[currentIndex]
+        
+        for _, playerColor in ipairs(seatedPlayers) do
+            if playerColor == currentColor then
+                FP = currentColor
+                found = true
+                break 
+            end
+        end
+
+        if found then break end 
+
+        currentIndex = currentIndex % 8 + 1
+    end
+    FirstplayerToken.setColorTint(FP)
+    for i,v in ipairs(getObjects()) do
+        if v.type == "Scripting" then
+            if v.getGMNotes() == FP then
+                FirstplayerToken.setPosition(v.positionToWorld({0.4,0.25,-1}))
+            end
+        end
+    end
+
+    for i,v in ipairs(getObjects()) do
+        if v.type == "Scripting" then
+            if v.getGMNotes() == FP then
+                FirstplayerToken.setPosition(v.positionToWorld({0.4,0.25,-1}))
+            end
+        end
+    end
 end
 
 function minus(o,p,c)
@@ -444,12 +575,19 @@ local function rotateOffset(x, z)
             max_distance = 3,
             debug        = false,
         })
-    
+        if not isbrutal or seven then
         for _, v in ipairs(hitList) do 
             if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
                 v.hit_object.setPosition({2.06, 1.49+posCount, 1.07})
                 v.hit_object.setRotation({0,180,0})
                 posCount = posCount + 0.1
+            end
+        end
+        else
+            for _, v in ipairs(hitList) do 
+                if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
+                    v.hit_object.setRotationSmooth({0,180,180},false,false)
+                end
             end
         end
     end
@@ -466,12 +604,19 @@ local function rotateOffset(x, z)
             max_distance = 3,
             debug        = false,
         })
-
-        for _, v in ipairs(hitList2) do 
-            if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                v.hit_object.setPosition({2.06, 1.49+posCount, 1.07})
-                v.hit_object.setRotation({0,180,0})
-                posCount = posCount + 0.1
+        if not isbrutal or seven then
+            for _, v in ipairs(hitList2) do 
+                if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
+                    v.hit_object.setPosition({2.06, 1.49+posCount, 1.07})
+                    v.hit_object.setRotation({0,180,0})
+                    posCount = posCount + 0.1
+                end
+            end
+        else
+            for _, v in ipairs(hitList2) do 
+                if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
+                    v.hit_object.setRotationSmooth({0,180,180},false,false)
+                end
             end
         end
     end
@@ -488,15 +633,24 @@ local function rotateOffset(x, z)
             max_distance = 3,
             debug        = false,
         })
-    
-        for k, v in ipairs(hitList3) do 
-            if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                v.hit_object.setPosition({2.06, 1.49+posCount, 1.07})
-                v.hit_object.setRotation({0,180,0})
-                posCount = posCount + 0.1
+        
+        if not isbrutal or seven then
+            for k, v in ipairs(hitList3) do 
+                if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
+                    v.hit_object.setPosition({2.06, 1.49+posCount, 1.07})
+                    v.hit_object.setRotation({0,180,0})
+                    posCount = posCount + 0.1
+                end
+            end
+        else
+            for _, v in ipairs(hitList3) do 
+                if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
+                    v.hit_object.setRotationSmooth({0,180,180},false,false)
+                end
             end
         end
     end
+    seven = false
 end
 
 function stay(o,c,a)
@@ -565,7 +719,7 @@ function hit(o,c,a)
 end
 
 function hit2()
-    
+    seven = false
     local count = 0
 
     -- 플레이어 기준 위치 및 회전
@@ -729,6 +883,7 @@ end
     end
 
     if drawcard.hasTag("seven") then
+        seven = true
         bust(hit_o,Pcolor,hit_a)
         local firstSlotOffset = rotateOffset(spacingX * -1, offsetZ_up)
         local firstSlotPos = center + firstSlotOffset + vector(0, -3.3, 0)
@@ -773,6 +928,78 @@ end
             end
         end
     end
+local thirteenCount = 0
+local sameNumber = false
+local hasLucky13 = false
+
+for _,v in ipairs(scriptzone) do
+    if v.getGMNotes() == Pcolor then
+        for _,k in ipairs(v.getObjects()) do
+
+            -- Lucky13 보유 여부
+            if k.hasTag("lucky13") then
+                hasLucky13 = true
+            end
+
+            -- 🔥 drawcard도 Lucky13이면 포함
+            if drawcard.hasTag("lucky13") then
+                hasLucky13 = true
+            end
+
+            -- 숫자 중복 검사
+            if k.hasTag("number") and drawcard.hasTag("number") then
+                if k.getDescription() == drawcard.getDescription() then
+
+                    if tonumber(k.getDescription()) == 13 then
+                        thirteenCount = thirteenCount + 1
+                    else
+                        sameNumber = true
+                    end
+
+                end
+            end
+
+        end
+    end
+end
+
+
+-- 🔥 숫자 처리 (핑만 찍고 종료)
+
+if drawcard.hasTag("number") then
+
+    local num = tonumber(drawcard.getDescription())
+
+    -- 13일 경우
+    if num == 13 then
+        
+        if hasLucky13 then
+            -- Lucky13 있으면 3번째 13에서만 핑
+            if thirteenCount >= 2 then
+                Player[Pcolor].pingTable(emptyPos)
+                return 1
+            end
+        else
+            -- Lucky13 없으면 2번째 13에서 핑
+            if thirteenCount >= 1 then
+                Player[Pcolor].pingTable(emptyPos)
+                return 1
+            end
+        end
+
+    else
+        -- 13이 아닌 숫자 중복
+        if sameNumber then
+            if drawcard.hasTag("seven") == false then
+                Player[Pcolor].pingTable(emptyPos)
+            return 1
+            end
+        end
+    end
+
+end
+
+
 return 1
 end
 function scan()

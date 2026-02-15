@@ -7,7 +7,7 @@ PlayerStatus = {
 }
 
 -- Globals
-PLAYER_COLORS = {"Yellow", "Red", "White", "Orange", "Blue", "Pink", "Green", "Purple"}
+PLAYER_COLORS = {"White", "Yellow", "Red", "Purple", "Green", "Pink", "Blue", "Orange"}
 PlayerData = {}
 
 function onLoad()
@@ -126,6 +126,7 @@ function onLoad()
     BaseGame = true
     IsBrutal = false -- only available in vengeance mode
     HasBeenPewd = false
+    StartingPlayer = -1
 
     BaseBag = getObjectFromGUID("314599")
     ExpBag = getObjectFromGUID("ff1e2d")
@@ -148,8 +149,7 @@ function onLoad()
     Wait.time(CountItems, 0.5, -1)
 end
 
-function None()
-end
+function None() end
 
 function Brutal()
     IsBrutal = not IsBrutal
@@ -249,6 +249,8 @@ function StartGame()
         font_size      = 700,
         tooltip        = "Reset all player points and cards"
     })
+
+    ShiftStartingPlayer(true)
 end
 
 function ResetGame(_, color, _)
@@ -277,6 +279,7 @@ function ResetGame(_, color, _)
     end
 
     drawDeck.shuffle()
+    ShiftStartingPlayer(true)
 end
 
 function Selection()
@@ -305,7 +308,7 @@ end
 
 function NewRound()
     local posCount = 0.1
-    Deck2 = scan2()
+    Deck2 = Scan2()
 
     for _, v in pairs(getObjects()) do
         if v ~= Deck2 and (v.type == "Deck" or v.type == "Card") then
@@ -331,6 +334,8 @@ function NewRound()
             value = Score2,
         })
     end
+
+    ShiftStartingPlayer()
 end
 
 function Minus(object, color, alt)
@@ -794,6 +799,19 @@ function GetTotalScore(color)
         return tonumber(inputs[1].value) or 0
     end
     return 0
+end
+
+function ShiftStartingPlayer(init)
+    local seatedPlayers = getSeatedPlayers()
+    if #seatedPlayers > 0 then
+        StartingPlayer = init and math.random(1, #seatedPlayers) or (StartingPlayer + 1)
+        if StartingPlayer > #seatedPlayers then
+            StartingPlayer = 1
+        end
+
+        local player = Player[seatedPlayers[StartingPlayer]]
+        broadcastToAll(("%s begins.."):format(player.steam_name or player.color), player.color)
+    end
 end
 
 function UpdateScoreBoard()

@@ -19,7 +19,7 @@ function onLoad()
     Bound = StartBtn.getBoundsNormalized()
 
     StartBtn.createButton({
-        click_function = "none",
+        click_function = "None",
         function_owner = self,
         label          = "Flip 7",
         position       = {0, 0.5, 3/Scale.z},
@@ -33,7 +33,7 @@ function onLoad()
     })
 
     StartBtn.createButton({
-        click_function = "startgame",
+        click_function = "StartGame",
         function_owner = self,
         label          = "Start Game",
         position       = {0, 0.5, -2/Scale.z},
@@ -47,7 +47,7 @@ function onLoad()
     })
 
     StartBtn.createButton({
-        click_function  = "selection",
+        click_function  = "Selection",
         label           = "<",
         function_owner  = self,
         width           = 700,
@@ -59,7 +59,7 @@ function onLoad()
     })
 
     StartBtn.createButton({
-        click_function  = "selection",
+        click_function  = "Selection",
         label           = ">",
         function_owner  = self,
         width           = 700,
@@ -71,7 +71,7 @@ function onLoad()
     })
 
     StartBtn.createButton({
-        click_function = "brutal",
+        click_function = "Brutal",
         function_owner = self,
         label          = "",
         position       = {0, 0.5, 0.5/Scale.z},
@@ -106,7 +106,7 @@ function onLoad()
     for _, v in pairs(getObjects()) do
         if v.type == "Scripting" then
             v.createButton({
-                click_function = "none",
+                click_function = "None",
                 function_owner = self,
                 label          = "0",
                 position       = {0.4, 0.25, -1},
@@ -122,53 +122,47 @@ function onLoad()
         end
     end
 
-    score = {}
-    numberSum = {}
-    plusSum = {}
-    mult = {}
-    countNumbercard = {}
-    isbase = true
-    isbrutal = false
-    hasBeenPewd = false
+    Score = {} -- could be moved to PlayerData?
+    BaseGame = true
+    IsBrutal = false -- only available in vengeance mode
+    HasBeenPewd = false
 
-    baseBag = getObjectFromGUID("314599")
-    expBag = getObjectFromGUID("ff1e2d")
-    stayBag = getObjectFromGUID("5e7ab9")
-    bustedBag = getObjectFromGUID("5e7ab8")
-    baseBag.interactable = false
-    expBag.interactable = false
-    stayBag.interactable = false
-    bustedBag.interactable = false
+    BaseBag = getObjectFromGUID("314599")
+    ExpBag = getObjectFromGUID("ff1e2d")
+    StayBag = getObjectFromGUID("5e7ab9")
+    BustedBag = getObjectFromGUID("5e7ab8")
+    BaseBag.interactable = false
+    ExpBag.interactable = false
+    StayBag.interactable = false
+    BustedBag.interactable = false
 
     -- Init deck with base game
-    deck2 = scan2()
-    deck2.destruct()
-    deck2 = baseBag.takeObject()
-    deck2.setPosition({-1.60, 2.1, 1.13})
-    deck2.setRotation({0, 180, 180})
-    deck2.shuffle()
+    Deck2 = Scan2()
+    Deck2.destruct()
+    Deck2 = BaseBag.takeObject()
+    Deck2.setPosition({-1.60, 2.1, 1.13})
+    Deck2.setRotation({0, 180, 180})
+    Deck2.shuffle()
 
-    -- Running countItems two times a second
-    Wait.time(countItems, 0.5, -1)
+    -- Running CountItems two times a second
+    Wait.time(CountItems, 0.5, -1)
 end
 
-function none()
+function None()
 end
 
-function brutal()
-    if isbrutal then
-        isbrutal = false
-        StartBtn.editButton({index=4, label="Brutal Mode [ ]"})
-    else
-        isbrutal = true
-        StartBtn.editButton({index=4, label="Brutal Mode [✓]"})
-    end
+function Brutal()
+    IsBrutal = not IsBrutal
+    StartBtn.editButton({
+        index = 4,
+        label = ("Brutal Mode [%s]"):format(IsBrutal and "✓" or "")
+    })
 end
 
-function startgame()
+function StartGame()
     StartBtn.destruct()
     HitBtn.createButton({
-        click_function = "hit",
+        click_function = "Hit",
         function_owner = self,
         label          = "Hit",
         position       = {0, 0.5, 0},
@@ -182,7 +176,7 @@ function startgame()
     })
 
     StayBtn.createButton({
-        click_function = "stay",
+        click_function = "Stay",
         function_owner = self,
         label          = "Stay",
         position       = {0, 0.5, 0},
@@ -197,7 +191,7 @@ function startgame()
 
     for _, v in pairs(PlayerData) do
         v.scoreTile.createButton({
-            click_function = "bust",
+            click_function = "Bust",
             function_owner = self,
             label          = "Bust",
             position       = {0, 0, 3/Scale.z},
@@ -209,9 +203,9 @@ function startgame()
             font_color     = "Black",
             font_size      = 900*Bound.size.z
         })
-        if isbrutal then
+        if IsBrutal then
             v.scoreTile.createButton({
-                click_function = "minus",
+                click_function = "Minus",
                 function_owner = self,
                 label          = "-15",
                 position       = {8/Scale.x, 0, 3/Scale.z},
@@ -226,40 +220,23 @@ function startgame()
         end
     end
 
-    if isbase == false then
-        NewroundBtn.createButton({
-            click_function = "newround",
-            function_owner = self,
-            label          = "New Round",
-            position       = {0, 0.5, 0},
-            rotation       = {0, 180, 0},
-            scale          = {1/Scale.x, 1, 1/Scale.z},
-            width          = 4000,
-            height         = 1000,
-            color          = "White",
-            font_color     = "Black",
-            font_size      = 700,
-            tooltip        = "Calculate the scores and start the next round."
-        })
-    else
-        NewroundBtn.createButton({
-            click_function = "newround",
-            function_owner = self,
-            label          = "New Round",
-            position       = {0, 0.5, 0},
-            rotation       = {0, 180, 0},
-            scale          = {1/Scale.x, 1, 1/Scale.z},
-            width          = 4000,
-            height         = 1000,
-            color          = "White",
-            font_color     = "Black",
-            font_size      = 700,
-            tooltip        = "Calculate the scores and start the next round."
-        })
-    end
+    NewroundBtn.createButton({
+        click_function = "NewRound",
+        function_owner = self,
+        label          = "Next Round",
+        position       = {0, 0.5, 0},
+        rotation       = {0, 180, 0},
+        scale          = {1/Scale.x, 1, 1/Scale.z},
+        width          = 4000,
+        height         = 1000,
+        color          = "White",
+        font_color     = "Black",
+        font_size      = 700,
+        tooltip        = "Update scores, start next round"
+    })
 
     NewroundBtn.createButton({
-        click_function = "resetGame",
+        click_function = "ResetGame",
         function_owner = self,
         label          = "Reset Game",
         position       = {-7, -2, -23.25},
@@ -274,7 +251,7 @@ function startgame()
     })
 end
 
-function resetGame(_, color, _)
+function ResetGame(_, color, _)
     if not Player[color].admin then
         broadcastToColor("You need to be promoted to use this feature", color)
         return
@@ -291,7 +268,7 @@ function resetGame(_, color, _)
     end
 
     -- put all cards back
-    local drawDeck = scan2()
+    local drawDeck = Scan2()
     for _, v in pairs(getObjects()) do
         if v ~= drawDeck and (v.type == "Deck" or v.type == "Card") then
             v.setPosition({-1.60, 2.3, 1.13})
@@ -302,37 +279,38 @@ function resetGame(_, color, _)
     drawDeck.shuffle()
 end
 
-function selection()
-    if isbase then
-        isbase = false
-        deck2.destruct()
-        deck2 = expBag.takeObject()
+function Selection()
+    if BaseGame then
+        BaseGame = false
+        Deck2.destruct()
+        Deck2 = ExpBag.takeObject()
 
         StartBtn.editButton({index=0, label="Flip 7 With A Vengeance"})
         StartBtn.editButton({index=4, label="Brutal Mode [ ]"})
     else
-        isbase = true
-        deck2.destruct()
-        deck2 = baseBag.takeObject()
+        BaseGame = true
+        Deck2.destruct()
+        Deck2 = BaseBag.takeObject()
 
         StartBtn.editButton({index=0, label="Flip 7"})
         StartBtn.editButton({index=4, label=""})
     end
 
-    isbrutal = false
+    IsBrutal = false
 
-    deck2.setPosition({-1.60, 2.1, 1.13})
-    deck2.setRotation({0, 180, 180})
-    deck2.shuffle()
+    Deck2.setPosition({-1.60, 2.1, 1.13})
+    Deck2.setRotation({0, 180, 180})
+    Deck2.shuffle()
 end
 
-function newround()
-    deck2 = scan2()
-    posCount = 0.1
-    for _, v in ipairs(getObjects()) do
-        if v ~= deck2 and (v.type=="Deck" or v.type=="Card") then
+function NewRound()
+    local posCount = 0.1
+    Deck2 = scan2()
+
+    for _, v in pairs(getObjects()) do
+        if v ~= Deck2 and (v.type == "Deck" or v.type == "Card") then
             v.setPosition({2.06, 1.49+posCount, 1.07})
-            v.setRotation({0,180,0})
+            v.setRotation({0, 180, 0})
             posCount = posCount + 0.1
         end
 
@@ -347,33 +325,33 @@ function newround()
 
         -- update score
         Score1 = playerData.scoreTile.getInputs()[1].value
-        Score2 = Score1 + getScore(playerData.scriptZone)
+        Score2 = Score1 + GetScore(playerData.scriptZone)
         playerData.scoreTile.editInput({
-            index          = 0,
-            value          = Score2,
+            index = 0,
+            value = Score2,
         })
     end
 end
 
-function minus(o,p,c)
-    Score1 = o.getInputs()[1].value
+function Minus(object, color, alt)
+    Score1 = object.getInputs()[1].value
     Score2 = Score1 + -15
 
-    if isbrutal == false and Score2 < 0 then
+    if not IsBrutal and Score2 < 0 then
         Score2 = 0
     end
 
-    o.editInput({
-        index          = 0,
-        value          = Score2,
+    object.editInput({
+        index = 0,
+        value = Score2,
     })
 end
 
-function countItems()
+function CountItems()
     local hasDuplicateNumber = false
-
+    local numberSum, plusSum, mult, countNumbercard = {}, {}, {}, {}
     for i = 1, 8 do
-        score[i] = 0
+        Score[i] = 0
         numberSum[i] = 0
         plusSum[i] = 0
         mult[i] = 1
@@ -394,36 +372,38 @@ function countItems()
             end
         end
 
-        for _, scriptZoneObject in pairs(scriptZoneObjects) do -- key = 1|2|3|etc, object = actual TTS object
+        for _, scriptZoneObject in pairs(scriptZoneObjects) do
             if scriptZoneObject.hasTag("number") and scriptZoneObject.is_face_down == false then
-                local description = scriptZoneObject.getDescription() -- get the description
-                local number = tonumber(description)  -- convert it to a number
-                if(number ~= nil) then -- check if you actually get a number (tonumber returns nil if it isn't)
+                local description = scriptZoneObject.getDescription()
+                local number = tonumber(description)
+
+                if number then
                     local seenNumberCount = seenNumbers[number] or 0
 					if seenNumberCount == 0 or (number == 13 and seenNumberCount == 1 and hasLuckyThirteen) then
 						seenNumbers[number] = seenNumberCount + 1
 						numberSum[i] = numberSum[i] + number
 					else
 						hasDuplicateNumber = true
-						if not hasBeenPewd then
+						if not HasBeenPewd then
                             local player = Player[color]
                             local broadcastMessage = ("%s got pewd!"):format(player.steam_name or player.color)
 							broadcastToAll(broadcastMessage, player.color)
                             PlayerData[color].status = PlayerStatus.ActionRequired
-							hasBeenPewd = true
+							HasBeenPewd = true
 						end
 					end
                 end
+
                 countNumbercard[i] = countNumbercard[i] + 1
 
             elseif scriptZoneObject.hasTag("plus") and scriptZoneObject.is_face_down == false then
-                local description = scriptZoneObject.getDescription() -- get the description
-                local plus = tonumber(description)  -- convert it to a number
+                local description = scriptZoneObject.getDescription()
+                local plus = tonumber(description)
                 plusSum[i] = plusSum[i] + plus
 
             elseif scriptZoneObject.hasTag("mult") and scriptZoneObject.is_face_down == false then
-                local description = scriptZoneObject.getDescription() -- get the description
-                mult[i] = tonumber(description)  -- convert it to a number
+                local description = scriptZoneObject.getDescription()
+                mult[i] = tonumber(description)
 
             elseif scriptZoneObject.hasTag("special") and scriptZoneObject.is_face_down == false then
                 -- TODO: handle special cards
@@ -434,42 +414,33 @@ function countItems()
             PlayerData[color].status = PlayerStatus.Default
         end
 
-        score[i] = numberSum[i]*mult[i]+plusSum[i]
+        Score[i] = numberSum[i]*mult[i]+plusSum[i]
         if countNumbercard[i] == 7 then
-            score[i] = score[i] + 15
+            Score[i] = Score[i] + 15
         end
 
         -- only the special vengeance mode 0 card has the tag 'zero'
         for _, scriptZoneObject in ipairs(scriptZoneObjects) do
             if scriptZoneObject.hasTag("zero") and countNumbercard[i] < 7 then
-                score[i] = 0
+                Score[i] = 0
             end
         end
 
-        if isbrutal == false and score[i] < 0 then
-            score[i] = 0
+        if IsBrutal == false and Score[i] < 0 then
+            Score[i] = 0
         end
 
-        v.editButton({label = score[i]})
+        v.editButton({label = Score[i]})
     end
 
 	if not hasDuplicateNumber then
-		hasBeenPewd = false
+		HasBeenPewd = false
 	end
 
     UpdateScoreBoard()
 end
 
-
-function updateScore(zone)
-    local scoreValue = getScore(zone)
-    zone.editButton({
-        index = 0,
-        label = scoreValue,
-    })
-end
-
-function getScore(zone)
+function GetScore(zone)
     local score = 0
     local numberSum = 0
     local plusSum = 0
@@ -481,7 +452,7 @@ function getScore(zone)
         if object.hasTag("number") and object.is_face_down == false then
             local description = object.getDescription() -- get the description
             local number = tonumber(description)  -- convert it to a number
-            if (number ~= nil) then -- check if you actually get a number (tonumber returns nil if it isn't)
+            if number then -- check if you actually get a number
                  numberSum = numberSum + number
             end
             countNumbercard = countNumbercard +1
@@ -504,14 +475,14 @@ function getScore(zone)
         score = score + 15
     end
 
-    if isbrutal == false and score < 0 then
+    if not IsBrutal and score < 0 then
         score = 0
     end
 
     return score
 end
 
-function bust(object, color, alt)
+function Bust(object, color, alt)
     if IsPlayerDoneWithRound(color) then
         broadcastToColor("Please wait until a new round has started", color)
         return false
@@ -519,18 +490,19 @@ function bust(object, color, alt)
 
     ResetPlayerCards(color)
 
+    PlayerData[color].status = PlayerStatus.Busted
+
     -- add busted marker in player zone
     local player3DData = PlayerData[color].positionData
-    local bustedToken = bustedBag.takeObject()
-    bustedToken.setPosition(player3DData.center + rotateOffset(0, 6, player3DData.angleY))
+    local bustedToken = BustedBag.takeObject()
+    if not bustedToken then return end
+    bustedToken.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
     bustedToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
-
-    PlayerData[color].status = PlayerStatus.Busted
 end
 
-function stay(object, color, alt)
+function Stay(object, color, alt)
     if alt then return false end
-    if hasBeenPewd then return false end
+    if HasBeenPewd then return false end
     if IsPlayerDoneWithRound(color) then
         broadcastToColor("Please wait until a new round has started", color)
         return false
@@ -538,31 +510,32 @@ function stay(object, color, alt)
 
     local playerData = PlayerData[color]
 
-    if isbase then
+    if BaseGame then
         ResetPlayerCards(color)
 
         -- update score
         Score1 = playerData.scoreTile.getInputs()[1].value
-        Score2 = Score1 + getScore(playerData.scriptZone)
+        Score2 = Score1 + GetScore(playerData.scriptZone)
         playerData.scoreTile.editInput({
-            index          = 0,
-            value          = Score2,
+            index = 0,
+            value = Score2,
         })
     end
 
+    playerData.status = PlayerStatus.Stayed
+
     -- add stay marker in player zone
     local player3DData = PlayerData[color].positionData
-    local stayToken = stayBag.takeObject()
-    stayToken.setPosition(player3DData.center + rotateOffset(0, 6, player3DData.angleY))
+    local stayToken = StayBag.takeObject()
+    if not stayToken then return end
+    stayToken.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
     stayToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
-
-    playerData.status = PlayerStatus.Stayed
 end
 
 local lastHit = os.time()
-function hit(object, color, alt)
+function Hit(object, color, alt)
     if alt then return false end
-    if hasBeenPewd then return false end
+    if HasBeenPewd then return false end
     if IsPlayerDoneWithRound(color) then
         broadcastToColor("Please wait until a new round has started", color)
         return false
@@ -581,12 +554,13 @@ function hit(object, color, alt)
     local offsetZ_up = 2
     local offsetZ_down = -2
 
-    local emptyIndex = nil
-    local filled = false
+    local emptyIndex, emptyIndex2 = nil, nil
+    local emptyPos, emptyPos2 = nil, nil
+    local filled, filled2 = false, false
 
     -- 위쪽 3칸 (1 ~ 3)
     for i = -1, 1 do
-        local localOffset = rotateOffset(spacingX * i, offsetZ_up, angleY)
+        local localOffset = RotateOffset(spacingX * i, offsetZ_up, angleY)
         local origin = center + localOffset
         local hitList = Physics.cast({
             origin       = origin + Vector(0, -3, 0),
@@ -617,7 +591,7 @@ function hit(object, color, alt)
     if not emptyIndex then
         for i = -2, 1 do
             local x = spacingX * i + spacingX / 2
-            local localOffset = rotateOffset(x, offsetZ_down, angleY)
+            local localOffset = RotateOffset(x, offsetZ_down, angleY)
             local origin = center + localOffset
             local hitList2 = Physics.cast({
                 origin       = origin + Vector(0, -3, 0),
@@ -648,7 +622,7 @@ function hit(object, color, alt)
 
     for i = -2, 2 do  -- 5개 칸 (i = -2, -1, 0, 1, 2)
         local x = spacingX * i  -- x 값 조정: 좌우 간격 유지
-        local localOffset = rotateOffset(x, offsetZ_down, angleY)
+        local localOffset = RotateOffset(x, offsetZ_down, angleY)
         local origin = handTransform.position + forward * 11 + localOffset
         local hitList3 = Physics.cast({
             origin       = origin + Vector(0, -3, 0),
@@ -660,8 +634,7 @@ function hit(object, color, alt)
             debug        = false,
         })
 
-        filled2 = false
-        for _, v in ipairs(hitList3) do
+        for _, v in pairs(hitList3) do
             if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
                 filled2 = true
                 break
@@ -669,14 +642,14 @@ function hit(object, color, alt)
         end
 
         if not filled2 then
-            emptyIndex2 = (i + 2)  -- i = -1 → 1번칸, 0 → 2번칸, 1 → 3번칸
+            emptyIndex2 = (i + 2) -- unused variable?
             emptyPos2 = origin + Vector(0, -3.3, 0)
             break
         end
     end
 
-    local drawcard = scan()
-    if isempty then
+    local drawcard = Scan()
+    if IsEmpty then
         local discardCheck = Physics.cast({
             origin       = {2.06, 1.49, 1.07},
             direction    = {0, -1, 0},
@@ -694,16 +667,16 @@ function hit(object, color, alt)
                 discardDeck.setRotation({0, 180, 180})
                 discardDeck.shuffle()
                 -- 다시 scan
-                drawcard = scan()
+                drawcard = Scan()
 
                 break
             end
         end
 
-        -- isempty will be updated in scan()
-        if isempty then return end
+        -- IsEmpty will be updated in scan()
+        if IsEmpty then return end
     end
-
+    if not drawcard then return end
     if drawcard.hasTag("special") then
         drawcard.setPositionSmooth(emptyPos2, false, false)
         drawcard.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
@@ -713,14 +686,14 @@ function hit(object, color, alt)
     end
 
     if drawcard.hasTag("seven") then
-        bust(object, color, alt)
-        local firstSlotOffset = rotateOffset(spacingX * -1, offsetZ_up, angleY)
+        Bust(object, color, alt)
+        local firstSlotOffset = RotateOffset(spacingX * -1, offsetZ_up, angleY)
         local firstSlotPos = center + firstSlotOffset + Vector(0, -3.3, 0)
         drawcard.setPositionSmooth(firstSlotPos, false, false)
         drawcard.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
     end
 
-    isDeck = false
+    local isDeck = false
     local hitcheck = Physics.cast({
         origin       = {-1.60, 1.83, 1.13},
         direction    = {0, -1, 0},
@@ -736,7 +709,7 @@ function hit(object, color, alt)
             isDeck = true
         end
     end
-    if isDeck == false then
+    if not isDeck then
         local hitcheck2 = Physics.cast({
             origin       = {2.06, 1.49, 1.07},
             direction    = {0, -1, 0},
@@ -758,7 +731,7 @@ function hit(object, color, alt)
 end
 
 -- Rotate Offset
-function rotateOffset(x, z, Yangle)
+function RotateOffset(x, z, Yangle)
     local rx = math.cos(-Yangle) * x - math.sin(-Yangle) * z
     local rz = math.sin(-Yangle) * x + math.cos(-Yangle) * z
     return Vector(rx, 0, rz)
@@ -778,41 +751,35 @@ function ResetPlayerCards(color)
     end
 end
 
-function scan()
-    isempty = true
-    deckscan = Physics.cast({
-        origin       = {-2, 2, 1},
-        direction    = {0, -1, 0},
-        type         = 3,
-        size         = {1, 1, 1},
-        orientation  = {0, 0, 0},
-        max_distance = 1,
-        debug        = false,
-    })
+local castParams = {
+    origin       = {-2, 2, 1},
+    direction    = {0, -1, 0},
+    type         = 3,
+    size         = {1, 1, 1},
+    orientation  = {0, 0, 0},
+    max_distance = 1,
+    debug        = false,
+}
+
+function Scan()
+    local deckscan = Physics.cast(castParams)
+    IsEmpty = true
 
     for _, v in ipairs(deckscan) do
         if v.hit_object.type == "Deck" then
-            isempty = false
+            IsEmpty = false
 
             return v.hit_object.takeObject()
         elseif v.hit_object.type == "Card" then
-            isempty = false
+            IsEmpty = false
 
             return v.hit_object
         end
     end
 end
 
-function scan2()
-    local deckscan = Physics.cast({
-        origin       = {-2, 2, 1},
-        direction    = {0, -1, 0},
-        type         = 3,
-        size         = {1, 1, 1},
-        orientation  = {0, 0, 0},
-        max_distance = 1,
-        debug        = false,
-    })
+function Scan2()
+    local deckscan = Physics.cast(castParams)
 
     for _, v in pairs(deckscan) do
         if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
@@ -834,7 +801,7 @@ function UpdateScoreBoard()
 
     for i, color in ipairs(PLAYER_COLORS) do
         if Player[color].seated then
-            local roundScore = score[i] or 0
+            local roundScore = Score[i] or 0
             local gameScore = GetTotalScore(color)
             local potentialScore = gameScore + roundScore
 

@@ -172,6 +172,7 @@ end
 function None() end
 
 function Brutal()
+a    if BaseGame then return end
     IsBrutal = not IsBrutal
     StartBtn.editButton({
         index = 4,
@@ -527,7 +528,11 @@ function Bust(object, color, alt)
         return false
     end
 
-    ResetPlayerCards(color)
+    for _, v in pairs(PlayerData[color].scriptZone.getObjects()) do
+        if v.type == "Deck" or v.type == "Card" then
+            v.flip()
+        end
+    end
 
     PlayerData[color].status = PlayerStatus.Busted
 
@@ -548,18 +553,6 @@ function Stay(object, color, alt)
     end
 
     local playerData = PlayerData[color]
-
-    if BaseGame then
-        ResetPlayerCards(color)
-
-        -- update score
-        Score1 = playerData.scoreTile.getInputs()[1].value
-        Score2 = Score1 + GetScore(playerData.scriptZone)
-        playerData.scoreTile.editInput({
-            index = 0,
-            value = Score2,
-        })
-    end
 
     playerData.status = PlayerStatus.Stayed
 

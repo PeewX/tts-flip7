@@ -16,6 +16,7 @@ SpecialCards = {
 -- Globals
 PLAYER_COLORS = {"White", "Yellow", "Red", "Purple", "Green", "Pink", "Blue", "Orange"}
 PlayerData = {}
+NextPlayerStartToken = nil
 
 -- Overwrite getSeatedPlayers to return the colors in correct order
 local _getSeatedPlayers = getSeatedPlayers
@@ -152,10 +153,12 @@ function onLoad()
     ExpBag = getObjectFromGUID("ff1e2d")
     StayBag = getObjectFromGUID("5e7ab9")
     BustedBag = getObjectFromGUID("5e7ab8")
+    NextPlayerBag = getObjectFromGUID("5e7ab7")
     BaseBag.interactable = false
     ExpBag.interactable = false
     StayBag.interactable = false
     BustedBag.interactable = false
+    NextPlayerBag.interactable = false
 
     -- Init deck with base game
     Deck2 = Scan2()
@@ -172,7 +175,7 @@ end
 function None() end
 
 function Brutal()
-a    if BaseGame then return end
+    if BaseGame then return end
     IsBrutal = not IsBrutal
     StartBtn.editButton({
         index = 4,
@@ -573,6 +576,11 @@ function Hit(object, color, alt)
         return false
     end
 
+    if NextPlayerStartToken then
+        NextPlayerStartToken.destruct()
+        NextPlayerStartToken = nil
+    end
+
     if os.time() - lastHit < 0.5 then return end
     lastHit = os.time()
 
@@ -836,6 +844,13 @@ function ShiftStartingPlayer(init)
         if StartingPlayer > #seatedPlayers then
             StartingPlayer = 1
         end
+
+        -- add begin marker in player zone
+        local player3DData = PlayerData[seatedPlayers[StartingPlayer]].positionData
+        NextPlayerStartToken = NextPlayerBag.takeObject()
+        if not NextPlayerStartToken then return end
+        NextPlayerStartToken.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
+        NextPlayerStartToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
 
         local player = Player[seatedPlayers[StartingPlayer]]
         broadcastToAll(("%s begins.."):format(player.steam_name or player.color), player.color)

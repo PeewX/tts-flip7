@@ -204,7 +204,7 @@ function StartGame()
         function_owner = self,
         label          = "Stay",
         position       = {0, 0.5, 0},
-        rotation       = {0,180,0},
+        rotation       = {0, 180, 0},
         scale          = {0.8/Scale.x, 1, 0.8/Scale.z},
         width          = 700*Bound.size.x,
         height         = 700*Bound.size.z,
@@ -248,13 +248,13 @@ function StartGame()
         click_function = "NewRound",
         function_owner = self,
         label          = "Next Round",
-        position       = {0, 0.5, 0},
+        position       = {0, -1.5, 0},
         rotation       = {0, 180, 0},
         scale          = {1/Scale.x, 1, 1/Scale.z},
         width          = 4000,
         height         = 1000,
-        color          = "White",
-        font_color     = "Black",
+        color          = {0, 0, 0.2, 0.9},
+        font_color     = {0.8, 0.8, 0.8, 0.9},
         font_size      = 700,
         tooltip        = "Update scores, start next round"
     })
@@ -262,7 +262,7 @@ function StartGame()
     NewroundBtn.createButton({
         click_function = "ResetGame",
         function_owner = self,
-        label          = "Reset Game",
+        label          = "New Game",
         position       = {-7, -2, -23.25},
         rotation       = {0, 180, 0},
         scale          = {1/Scale.x, 1, 1/Scale.z},
@@ -473,6 +473,7 @@ function CountItems()
             Score[i] = 0
         end
 
+        PlayerData[color].cardCount = countNumbercard[i]
         v.editButton({label = Score[i]})
     end
 
@@ -575,6 +576,7 @@ function Hit(object, color, alt)
         broadcastToColor("Please wait until a new round has started", color)
         return false
     end
+    if PlayerData[color].cardCount >= 7 then return end
 
     if NextPlayerStartToken then
         NextPlayerStartToken.destruct()
@@ -661,8 +663,6 @@ function Hit(object, color, alt)
     end
 
     for i = -2, 2 do  -- 5개 칸 (i = -2, -1, 0, 1, 2)
-        filled2 = false
-
         local x = spacingX * i  -- x 값 조정: 좌우 간격 유지
         local localOffset = RotateOffset(x, offsetZ_down, angleY)
         local origin = handTransform.position + forward * 11 + localOffset
@@ -676,6 +676,7 @@ function Hit(object, color, alt)
             debug        = false,
         })
 
+        filled2 = false
         for _, v in pairs(hitList3) do
             if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
                 filled2 = true
@@ -718,6 +719,7 @@ function Hit(object, color, alt)
         if IsEmpty then return end
     end
     if not drawcard then return end
+
     if drawcard.hasTag("special") then
         drawcard.setPositionSmooth(emptyPos2, false, false)
         drawcard.setRotation(Vector(0, handTransform.rotation.y + 180, 0))

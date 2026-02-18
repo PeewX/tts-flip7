@@ -296,6 +296,10 @@ function ResetGame(_, color, _)
             v.setPosition({-1.60, 2.3, 1.13})
             v.setRotation({0, 180, 180})
         end
+
+        if v.hasTag("stay") then
+            v.destruct()
+        end
     end
 
     drawDeck.shuffle()
@@ -722,7 +726,7 @@ function Hit(object, color, alt)
     end
 
     if drawcard.hasTag("seven") then
-        Bust(object, color, alt)
+        ResetPlayerCards(color)
         local firstSlotOffset = RotateOffset(spacingX * -1, offsetZ_up, angleY)
         local firstSlotPos = center + firstSlotOffset + Vector(0, -3.3, 0)
         drawcard.setPositionSmooth(firstSlotPos, false, false)

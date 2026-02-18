@@ -1,3 +1,7 @@
+-- CONSTS
+local MSG_BUSTED = "%s got busted!"
+local MSG_2ND_CHANCE = "%s needs their 2nd chance!"
+
 -- ENUMS
 PlayerStatus = {
     Default = 0,
@@ -5,10 +9,26 @@ PlayerStatus = {
     Stayed = 2,
     Busted = 3
 }
+SpecialCards = {
+    SecondChance = "SecondChance"
+}
 
 -- Globals
 PLAYER_COLORS = {"White", "Yellow", "Red", "Purple", "Green", "Pink", "Blue", "Orange"}
 PlayerData = {}
+
+-- Overwrite getSeatedPlayers to return the colors in correct order
+local _getSeatedPlayers = getSeatedPlayers
+function getSeatedPlayers()
+    local sortedPlayers = {}
+    for _, color in ipairs(PLAYER_COLORS) do
+        if Player[color].seated then
+            table.insert(sortedPlayers, color)
+        end
+    end
+
+    return sortedPlayers
+end
 
 function onLoad()
     StartBtn = getObjectFromGUID("5324c0")
@@ -367,11 +387,18 @@ function CountItems()
         local v = PlayerData[color].scriptZone
 		local seenNumbers = {}
         local scriptZoneObjects = v.getObjects() -- get objects already in the zone
+        local hasSecondChance = nil
         local hasLuckyThirteen = false
 
-        -- handle the lucky thirteen state before we iterate through all cards
-        -- this is necessary to handle edge cases, e.g. player lost lucky thirteen during the round
+        -- handle some special card flags before we iterate through all cards
+        -- this is necessary to handle edge cases, e.g. player lost a special card during the round
         for _, scriptZoneObject in pairs(scriptZoneObjects) do
+            -- second chance
+            if scriptZoneObject.hasTag("special") and scriptZoneObject.getDescription() == SpecialCards.SecondChance then
+                hasSecondChance = scriptZoneObject
+            end
+
+            -- lucky 13
             if scriptZoneObject.hasTag("thirteen") then
                 hasLuckyThirteen = true
             end
@@ -391,8 +418,11 @@ function CountItems()
 						hasDuplicateNumber = true
 						if not HasBeenPewd then
                             local player = Player[color]
-                            local broadcastMessage = ("%s got pewd!"):format(player.steam_name or player.color)
+                            local broadcastMessage = (hasSecondChance and MSG_2ND_CHANCE or MSG_BUSTED):format(player.steam_name or player.color)
 							broadcastToAll(broadcastMessage, player.color)
+							if hasSecondChance then
+                               player.pingTable(hasSecondChance.getPosition())
+                            end
                             PlayerData[color].status = PlayerStatus.ActionRequired
 							HasBeenPewd = true
 						end
@@ -626,6 +656,8 @@ function Hit(object, color, alt)
     end
 
     for i = -2, 2 do  -- 5개 칸 (i = -2, -1, 0, 1, 2)
+        filled2 = false
+
         local x = spacingX * i  -- x 값 조정: 좌우 간격 유지
         local localOffset = RotateOffset(x, offsetZ_down, angleY)
         local origin = handTransform.position + forward * 11 + localOffset
@@ -647,7 +679,6 @@ function Hit(object, color, alt)
         end
 
         if not filled2 then
-            emptyIndex2 = (i + 2) -- unused variable?
             emptyPos2 = origin + Vector(0, -3.3, 0)
             break
         end

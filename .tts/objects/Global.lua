@@ -1,6 +1,6 @@
 -- CONSTS
 local MSG_BUSTED = "%s got busted!"
-local MSG_2ND_CHANCE = "%s needs their 2nd chance!"
+local MSG_2ND_CHANCE = "Time for %s to use their second chance!"
 
 -- ENUMS
 PlayerStatus = {

@@ -9,6 +9,7 @@ PlayerStatus = {
     Stayed = 2,
     Busted = 3
 }
+
 SpecialCards = {
     SecondChance = "SecondChance"
 }
@@ -250,7 +251,7 @@ function StartGame()
     end
 
     NewroundBtn.createButton({
-        click_function = "NewRound",
+        click_function = "NewRoundCheck",
         function_owner = self,
         label          = "Next Round",
         position       = {0, -1.5, 0},
@@ -337,6 +338,13 @@ function Selection()
     Deck2.setPosition({-1.60, 2.1, 1.13})
     Deck2.setRotation({0, 180, 180})
     Deck2.shuffle()
+end
+
+function NewRoundCheck(object, color, alt)
+    if alt then return end
+    if AllPlayersDone() then return NewRound() end
+
+    Player[color].showConfirmDialog("Not everyone is finished. Start next round anyway?", NewRound)
 end
 
 function NewRound()
@@ -797,6 +805,16 @@ function ResetPlayerCards(color)
             v.setRotation({0, 180, 0})
         end
     end
+end
+
+function AllPlayersDone()
+    for color, data in pairs(PlayerData) do
+        if Player[color].seated and data.status == 0 then
+            return false
+        end
+    end
+    
+    return true
 end
 
 local castParams = {

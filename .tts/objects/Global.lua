@@ -13,8 +13,6 @@ function onLoad()
     expBag.interactable = false
     stayBag.interactable = false
     buttonSetup()
-
-
 end
 
 function buttonSetup()
@@ -95,32 +93,41 @@ function buttonSetup()
     scriptzone ={}
     setupCount = 1
     for i,v in ipairs(getObjects()) do
-        if v.type == "Scripting" then
-            table.insert(scriptzone,v)
+        if v.hasTag("temp") then
             v.createButton({
                 click_function = "none",
                 function_owner = self,
                 label          = "0",
-                position       = {0.4,0.25,-1},
-                rotation       = {0,180,0},
-                scale          = {0.2,0,0.25},
+                position       = {0,1,0},
+                rotation       = {0,0,0},
+                scale          = {1.5,1,1.5},
                 width          = 0,
                 height         = 0,
-                font_size      = 500,
+                font_size      = 1000,
                 color          = "White",
                 font_color     = "Grey",
             })
-            setupCount = setupCount+1
+            for _,k in ipairs(getObjects()) do
+                if k.type == "Scripting" then
+                    if v.getGMNotes() ==k.getGMNotes() then
+                        table.insert(scriptzone,k)
+
+                        setupCount = setupCount+1
+                    end
+                end
+            end
         end
     end
     timerID = self.getGUID()..math.random(9999999999999)
     --Sets position/color for the button, spawns it
     --Start timer which repeats forever, running countItems() every second
+
     Timer.create({
         identifier=timerID,
         function_name="countItems", function_owner=self,
         repetitions=0, delay=0.5
     })
+
     score = {}
     numberSum = {}
     plusSum = {}
@@ -136,9 +143,13 @@ function newgame()
     StayBtn.clearButtons()
     NewroundBtn.clearButtons()
     Timer.destroy(timerID)
+    newroundCheck = false
+
     for i,v in ipairs(getObjects()) do
-        if v.hasTag("score") then
+        if v.hasTag("temp") then
             v.clearButtons()
+        end
+        if v.hasTag("score") then
             v.editInput({
             index          = 0,
             value          = 0,
@@ -170,13 +181,13 @@ function brutal()
 end
 
 function startgame()
-    Turns.enable = false
     local seatedPlayers = getSeatedPlayers()
     if #seatedPlayers == 0 then
         broadcastToAll("No players seated")
         return 
     end
-        StartBtn.clearButtons()
+    Turns.enable = true
+    StartBtn.clearButtons()
     HitBtn.createButton({
         click_function = "hit",
         function_owner = self,
@@ -239,11 +250,7 @@ function startgame()
     end
 
     --if isbase == false then
-        if isbase then
-            t = "Start the next round."
-        else
-            t= "Calculate the scores and start the next round."
-        end
+
         NewroundBtn.createButton({
             click_function = "newround",
             function_owner = self,
@@ -251,12 +258,12 @@ function startgame()
             position       = {0/Scale.x,0.5,0/Scale.z},
             rotation       = {0,180,0},
             scale          = {1/Scale.x,1,1/Scale.z},
-            width          = 4000,
+            width          = 4300,
             height         = 1000,
-            color          = "White",
-            font_color     = "Black",
+            color          = {0,0,0.2,0.9},
+            font_color     = {0.8,0.8,0.8,0.9},
             font_size      = 700,
-            tooltip        = t
+            tooltip        = "Calculate the scores and start the next round."
         })
     --end
     local found = false
@@ -274,24 +281,96 @@ function startgame()
                 break 
             end
         end
-
         if found then break end 
 
         currentIndex = currentIndex % 8 + 1
     end
-
     broadcastToAll(FP.." is a starting player.",FP)
     FirstplayerToken.setColorTint(FP)
     for i,v in ipairs(getObjects()) do
-        if v.type == "Scripting" then
-            if v.getGMNotes() == FP then
-                FirstplayerToken.setPosition(v.positionToWorld({0.4,0.25,-1}))
+        if v.hasTag("Score") then
+            if v.hasTag(FP) then
+                FirstplayerToken.setPosition(v.positionToWorld({-4,1,0}))
             end
         end
     end
+    Player[FP].pingTable(FirstplayerToken.getPosition()+vector(0,2,0))
+    Turns.turn_color = FP
+
 end
 
+function onObjectDrop(Pcolor,object)
+    if object.hasTag("plus") or object.hasTag("mult") then
+        zoneCount = 0
+        for _,v in ipairs(object.getZones()) do 
+            zoneColor = v.getGMNotes()
+            zoneCount = zoneCount+1
+        end
+        if zoneCount < 1 then
+            return
+        end
+            local count = 0
 
+            -- 플레이어 기준 위치 및 회전
+            local handTransform = Player[zoneColor].getHandTransform()
+            -- 회전 각도 (플레이어 기준 정방향)
+            
+            local angleY = math.rad(handTransform.rotation.y)
+
+            local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
+            
+            local center = handTransform.position + forward * 16
+
+            local spacingX = 3
+            local offsetZ_up = 2
+            local offsetZ_down = -2
+
+        -- 회전 보조 함수 (회전 반대로 적용)
+        local function rotateOffset(x, z)
+            local rx = math.cos(-angleY) * x - math.sin(-angleY) * z
+            local rz = math.sin(-angleY) * x + math.cos(-angleY) * z
+
+            return Vector(rx, 0, rz)
+        end
+
+
+        local emptyIndex = nil
+        local filled = false
+        local specialPos = center+rotateOffset(0, 8)+vector(0, -3, 0)
+
+
+        for i = -2, 2 do  -- 5개 칸 (i = -2, -1, 0, 1, 2)
+            local x = spacingX * i  -- x 값 조정: 좌우 간격 유지
+            local localOffset = rotateOffset(x, offsetZ_down)
+            local origin = handTransform.position + forward * 11 + localOffset
+            local hitList3 = Physics.cast({
+                origin       = origin + vector(0, -3, 0),
+                direction    = {0, -1, 0},
+                type         = 3,
+                size         = {1, 1, 1},
+                orientation  = {0, 0, 0},
+                max_distance = 3,
+                debug        = false,
+            })
+
+            filled2 = false
+            for _, v in ipairs(hitList3) do 
+                if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
+                    filled2 = true
+                    break
+                end
+            end
+
+            if not filled2 then
+                emptyIndex2 = (i + 2)  -- i = -1 → 1번칸, 0 → 2번칸, 1 → 3번칸
+                emptyPos2 = origin + vector(0, -3.3, 0)
+                break
+            end
+        end
+        object.setPositionSmooth(emptyPos2,false,false)
+        object.setRotation({0, handTransform.rotation.y+180, 0})
+    end
+end
 
 function selection()
     if isbase then
@@ -304,7 +383,9 @@ function selection()
         deck2.shuffle()
 
         StartBtn.editButton({index=0,label="Flip 7 With A Vengeance"})
-        StartBtn.editButton({index=4,label="Brutal Mode [ ]"})
+        StartBtn.editButton({index=4,label="Brutal Mode [ ]",width=6000,height=1000,tooltip =[[- Your round score can go below zero.
+- You may give Modifier cards to any player.
+- If you reach Flip 7, You may choose to take 15 points or subtract 15 points from another player.]]})
 
     else
         isbase = true
@@ -316,14 +397,13 @@ function selection()
         deck2.shuffle()
 
         StartBtn.editButton({index=0,label="Flip 7"})
-        StartBtn.editButton({index=4,label=""})
+        StartBtn.editButton({index=4,label="",width=0,height=0})
 
     end
 end
 
 
 function newround()
-
         if WAIT_newround then
             return
         else
@@ -332,6 +412,15 @@ function newround()
                 WAIT_newround = false
             end,0.8)
         end
+    --[[
+    if not newroundCheck then
+        newroundCheck = true
+        NewroundBtn.editButton({index=0,label = "Are you sure?"})
+        return
+    end
+        newroundCheck = false
+        NewroundBtn.editButton({index=0,label = "Next Round"})
+    ]]--
     local seatedPlayers = getSeatedPlayers()
     if #seatedPlayers == 0 then
         broadcastToAll("No players seated")
@@ -353,11 +442,10 @@ function newround()
         end
     end
 
-    if not isbase then
         for _,c in ipairs(pColors) do
             for i,v in ipairs(getObjects()) do
-                if v.getGMNotes()== c then
-                Playerscore = getScore(v)
+                if v.type == "Scripting" and v.getGMNotes()== c then
+                    Playerscore = getScore(v)
                 end
             end   
             for i,v in ipairs(getObjects()) do
@@ -371,7 +459,6 @@ function newround()
                 end
             end
         end
-    end
 
     local found = false
     if currentIndex<8 then
@@ -394,22 +481,16 @@ function newround()
 
         currentIndex = currentIndex % 8 + 1
     end
+    broadcastToAll(FP.." is a starting player.",FP)
     FirstplayerToken.setColorTint(FP)
     for i,v in ipairs(getObjects()) do
-        if v.type == "Scripting" then
-            if v.getGMNotes() == FP then
-                FirstplayerToken.setPosition(v.positionToWorld({0.4,0.25,-1}))
+        if v.hasTag("Score") then
+            if v.hasTag(FP) then
+                FirstplayerToken.setPosition(v.positionToWorld({-4,1,0}))
             end
         end
     end
-
-    for i,v in ipairs(getObjects()) do
-        if v.type == "Scripting" then
-            if v.getGMNotes() == FP then
-                FirstplayerToken.setPosition(v.positionToWorld({0.4,0.25,-1}))
-            end
-        end
-    end
+    Turns.turn_color = FP
 end
 
 function minus(o,p,c)
@@ -481,7 +562,11 @@ function countItems()
             end
         end
 
-        v.editButton({label = score[i]})
+        for _,k in ipairs(getObjects()) do
+            if k.hasTag("temp") and k.getGMNotes() == v.getGMNotes() then
+                k.editButton({label = score[i]})
+            end
+        end
     end
 end
 
@@ -575,7 +660,7 @@ local function rotateOffset(x, z)
             max_distance = 3,
             debug        = false,
         })
-        if not isbrutal or seven then
+        if seven then
         for _, v in ipairs(hitList) do 
             if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
                 v.hit_object.setPosition({2.06, 1.49+posCount, 1.07})
@@ -586,7 +671,7 @@ local function rotateOffset(x, z)
         else
             for _, v in ipairs(hitList) do 
                 if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                    v.hit_object.setRotationSmooth({0,180,180},false,false)
+                    v.hit_object.flip()
                 end
             end
         end
@@ -604,7 +689,7 @@ local function rotateOffset(x, z)
             max_distance = 3,
             debug        = false,
         })
-        if not isbrutal or seven then
+        if seven then
             for _, v in ipairs(hitList2) do 
                 if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
                     v.hit_object.setPosition({2.06, 1.49+posCount, 1.07})
@@ -615,7 +700,7 @@ local function rotateOffset(x, z)
         else
             for _, v in ipairs(hitList2) do 
                 if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                    v.hit_object.setRotationSmooth({0,180,180},false,false)
+                    v.hit_object.flip()
                 end
             end
         end
@@ -634,7 +719,7 @@ local function rotateOffset(x, z)
             debug        = false,
         })
         
-        if not isbrutal or seven then
+        if seven then
             for k, v in ipairs(hitList3) do 
                 if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
                     v.hit_object.setPosition({2.06, 1.49+posCount, 1.07})
@@ -645,7 +730,7 @@ local function rotateOffset(x, z)
         else
             for _, v in ipairs(hitList3) do 
                 if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                    v.hit_object.setRotationSmooth({0,180,180},false,false)
+                    v.hit_object.flip()
                 end
             end
         end
@@ -654,24 +739,6 @@ local function rotateOffset(x, z)
 end
 
 function stay(o,c,a)
-    if isbase then
-        bust(o,c,a)
-        for i,v in ipairs(getObjects()) do
-            if v.getGMNotes()== c then
-            Playerscore = getScore(v)
-            end
-        end   
-        for i,v in ipairs(getObjects()) do
-            if v.hasTag("score") and v.hasTag(c) then
-                Score1 = v.getInputs()[1].value
-                Score2 = Score1 + Playerscore
-                v.editInput({
-                    index          = 0,
-                    value          = Score2,
-                })
-            end
-        end
-    else
                 -- 플레이어 기준 위치 및 회전
         local handTransform = Player[c].getHandTransform()
         -- 회전 각도 (플레이어 기준 정방향)
@@ -693,7 +760,6 @@ function stay(o,c,a)
         stayToken = stayBag.takeObject()
         stayToken.setPosition(center+rotateOffset(0,6))
         stayToken.setRotation(Vector(0, handTransform.rotation.y+180, 0))
-    end
 end
 
 function wait(time)
@@ -747,7 +813,7 @@ end
 
 local emptyIndex = nil
 local filled = false
-
+local specialPos = center+rotateOffset(0, 8)+vector(0, -3, 0)
 -- 위쪽 3칸 (1 ~ 3)
 for i = -1, 1 do
     local localOffset = rotateOffset(spacingX * i, offsetZ_up)
@@ -874,8 +940,18 @@ if isempty then
         return 1
     end
 end
+    drawcard.interactable = false
+    Wait.time(function() drawcard.interactable = true end,0.5)
     if drawcard.hasTag("special") then
-        drawcard.setPositionSmooth(emptyPos2,false,false)
+        if isbase then
+            if drawcard.hasTag("plus") or drawcard.hasTag("mult") then
+                drawcard.setPositionSmooth(emptyPos2,false,false)
+            else
+                drawcard.setPositionSmooth(specialPos,false,false)
+            end
+        else
+            drawcard.setPositionSmooth(specialPos,false,false)
+        end
         drawcard.setRotation(Vector(0, handTransform.rotation.y+180, 0))
     else
         drawcard.setPositionSmooth(emptyPos,false,false)

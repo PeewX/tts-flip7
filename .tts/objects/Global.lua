@@ -14,6 +14,12 @@ SpecialCards = {
     SecondChance = "SecondChance"
 }
 
+DeckModes = {
+    Base = 1,
+    Vengeance = 2,
+    Fusion = 3
+}
+
 -- Globals
 PLAYER_COLORS = {"White", "Yellow", "Red", "Purple", "Green", "Pink", "Blue", "Orange"}
 PlayerData = {}
@@ -69,7 +75,7 @@ function onLoad()
     })
 
     StartBtn.createButton({
-        click_function  = "Selection",
+        click_function  = "ModeSelUp",
         label           = "<",
         function_owner  = self,
         width           = 700,
@@ -81,7 +87,7 @@ function onLoad()
     })
 
     StartBtn.createButton({
-        click_function  = "Selection",
+        click_function  = "ModeSelDown",
         label           = ">",
         function_owner  = self,
         width           = 700,
@@ -152,22 +158,21 @@ function onLoad()
 
     BaseBag = getObjectFromGUID("314599")
     ExpBag = getObjectFromGUID("ff1e2d")
+    FusionBag = getObjectFromGUID("7eb9a5")
     StayBag = getObjectFromGUID("5e7ab9")
     BustedBag = getObjectFromGUID("5e7ab8")
     NextPlayerBag = getObjectFromGUID("5e7ab7")
     BaseBag.interactable = false
     ExpBag.interactable = false
+    FusionBag.interactable = false
     StayBag.interactable = false
     BustedBag.interactable = false
     NextPlayerBag.interactable = false
 
     -- Init deck with base game
+    DeckMode = DeckModes.Base
     Deck2 = Scan2()
-    Deck2.destruct()
-    Deck2 = BaseBag.takeObject()
-    Deck2.setPosition({-1.60, 2.1, 1.13})
-    Deck2.setRotation({0, 180, 180})
-    Deck2.shuffle()
+    SetModeSelection()
 
     local hotKeyFunctions = {"Hit", "Stay", "Bust"}
     for _, func in pairs(hotKeyFunctions) do
@@ -316,21 +321,41 @@ function ResetGame(_, color, _)
     ShiftStartingPlayer(true)
 end
 
-function Selection()
-    if BaseGame then
-        BaseGame = false
-        Deck2.destruct()
-        Deck2 = ExpBag.takeObject()
+function ModeSelUp()
+    DeckMode = DeckMode + 1
+    if DeckMode > table.size(DeckModes) then DeckMode = 1 end
+    SetModeSelection()
+end
 
-        StartBtn.editButton({index=0, label="Flip 7 With A Vengeance"})
-        StartBtn.editButton({index=4, label="Brutal Mode [ ]"})
-    else
+function ModeSelDown()
+    DeckMode = DeckMode - 1
+    if DeckMode < 1 then DeckMode = 3 end
+    SetModeSelection()
+end
+
+function SetModeSelection()
+    if DeckMode == 1 then
         BaseGame = true
         Deck2.destruct()
         Deck2 = BaseBag.takeObject()
 
         StartBtn.editButton({index=0, label="Flip 7"})
         StartBtn.editButton({index=4, label=""})
+    elseif DeckMode == 2 then
+        BaseGame = false
+        Deck2.destruct()
+        Deck2 = ExpBag.takeObject()
+
+        StartBtn.editButton({index=0, label="Flip 7 With A Vengeance"})
+        StartBtn.editButton({index=4, label="Brutal Mode [ ]"})
+        
+    elseif DeckMode == 3 then
+        BaseGame = false
+        Deck2.destruct()
+        Deck2 = FusionBag.takeObject()
+
+        StartBtn.editButton({index=0, label="Flip 7 Fusion Deck", tooltip="Base and Vengeance combined!"})
+        StartBtn.editButton({index=4, label="Brutal Mode [ ]"})
     end
 
     IsBrutal = false
@@ -962,4 +987,12 @@ function UpdateScoreBoard()
     ]], 40 + (#players * 24), rows)
 
     UI.setXml(xml)
+end
+
+------ Utils
+
+function table.size(T)
+    local count = 0
+    for _ in pairs(T) do count = count + 1 end
+    return count
 end

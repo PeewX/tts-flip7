@@ -168,6 +168,11 @@ function onLoad()
     Deck2.setRotation({0, 180, 180})
     Deck2.shuffle()
 
+    local hotKeyFunctions = {"Hit", "Stay", "Bust"}
+    for _, func in pairs(hotKeyFunctions) do
+        addHotkey(func, function(color, object, pos, keyUp) if keyUp and StartingPlayer > 0 then _G[func](object, color, false) end end, true)     
+    end
+
     -- Running CountItems two times a second
     Wait.time(CountItems, 0.5, -1)
 end

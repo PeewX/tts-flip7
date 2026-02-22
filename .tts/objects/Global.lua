@@ -61,6 +61,111 @@ function IsSnapPointOccupied(snapPoint)
 end
 
 function onLoad()
+    InitPlayerData()
+    InitButtonsAndObjects()
+
+    Score = {} -- could be moved to PlayerData?
+    BaseGame = true
+    IsBrutal = false -- only available in vengeance mode
+    HasBeenPewd = false
+    StartingPlayer = -1
+
+    -- Init deck with base game
+    DeckMode = DeckModes.Base
+    Deck2 = Scan2()
+    SetModeSelection()
+
+    local hotKeyFunctions = {"Hit", "Stay", "Bust"}
+    for _, func in pairs(hotKeyFunctions) do
+        addHotkey(func, function(color, object, pos, keyUp) if keyUp and StartingPlayer > 0 then _G[func](object, color, false) end end, true)
+    end
+
+    -- Running CountItems two times a second
+    Wait.time(CountItems, 0.5, -1)
+end
+
+function InitPlayerData()
+    -- Sort snap points row-by-row (center → player, left → right)
+    local function sortSnapPointsForPlayer(snapPointTable, center, forward)
+        -- Right vector (perpendicular to forward)
+        local right = Vector(forward.z, 0, -forward.x)
+
+        for _, sp in ipairs(snapPointTable) do
+            local offset = sp.position - center
+            sp._depth = offset:dot(forward) -- depth to center
+            sp._horizontal = offset:dot(right)
+        end
+
+        -- 1) Rows: closest to center first
+        -- 2) Inside row: left to right
+        table.sort(snapPointTable, function(a, b)
+            if math.abs(a._depth - b._depth) > 0.1 then
+                return a._depth > b._depth
+            end
+            return a._horizontal < b._horizontal
+        end)
+
+        for _, sp in pairs(snapPointTable) do
+            sp._depth = nil
+            sp._horizontal = nil
+        end
+    end
+
+    local snapPoints = Global.getSnapPoints()
+    for _, playerColor in pairs(PLAYER_COLORS) do
+        local handTransform = Player[playerColor].getHandTransform()
+        local angleY = math.rad(handTransform.rotation.y)
+        local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
+        local center = handTransform.position + forward * 16
+
+        PlayerData[playerColor] = {
+            status = PlayerStatus.Default,
+            scoreTile = getObjectsWithAllTags({"score", playerColor})[1],
+            positionData = {
+                handTransform = handTransform,
+                angleY = angleY,
+                forward = forward,
+                center = center
+            },
+            snapPoints = {
+                numbers = {},
+                special = {}
+            }
+        }
+
+        local snapPointsNumbers = PlayerData[playerColor].snapPoints.numbers
+        local snapPointsSpecial = PlayerData[playerColor].snapPoints.special
+
+        for _, snapPoint in pairs(snapPoints) do
+            local tagSet = {}
+            for _, tag in pairs(snapPoint.tags) do
+                tagSet[tag] = true
+            end
+
+
+            if tagSet[playerColor] then
+                if tagSet["number"] then
+                    table.insert(snapPointsNumbers, snapPoint)
+                end
+                if tagSet["Special"] then
+                    table.insert(snapPointsSpecial, snapPoint)
+                end
+            end
+        end
+
+        sortSnapPointsForPlayer(snapPointsNumbers, center, forward)
+        sortSnapPointsForPlayer(snapPointsSpecial, center, forward)
+    end
+
+    -- save scriptingZone to PlayerData
+    for _, v in pairs(getObjects()) do
+        if v.type == "Scripting" then
+            PlayerData[v.getGMNotes()].scriptZone = v
+        end
+    end
+end
+
+function InitButtonsAndObjects()
     StartBtn = getObjectFromGUID("5324c0")
     HitBtn = getObjectFromGUID("e7358b")
     StayBtn = getObjectFromGUID("83c6d4")
@@ -134,74 +239,22 @@ function onLoad()
         font_size      = 700
     })
 
-    local snapPoints = Global.getSnapPoints()
-    for _, playerColor in pairs(PLAYER_COLORS) do
-        local handTransform = Player[playerColor].getHandTransform()
-        local angleY = math.rad(handTransform.rotation.y)
-        local forward = Vector(math.sin(angleY), 0, math.cos(angleY))
-        local center = handTransform.position + forward * 16
-
-        PlayerData[playerColor] = {
-            status = PlayerStatus.Default,
-            scoreTile = getObjectsWithAllTags({"score", playerColor})[1],
-            positionData = {
-                handTransform = handTransform,
-                angleY = angleY,
-                forward = forward,
-                center = center
-            },
-            snapPoints = {
-                numbers = {},
-                special = {}
-            }
-        }
-
-        for _, snapPoint in pairs(snapPoints) do
-            local tagSet = {}
-            for _, tag in pairs(snapPoint.tags) do
-                tagSet[tag] = true
-            end
-
-            if tagSet[playerColor] then
-                local categoryMap = {
-                    number = PlayerData[playerColor].snapPoints.numbers,
-                    special = PlayerData[playerColor].snapPoints.special
-                }
-
-                for category, targetTable in pairs(categoryMap) do
-                    if tagSet[category] then
-                        table.insert(targetTable, snapPoint)
-                    end
-                end
-            end
-        end
+    -- create bust buttons for players
+    for _, color in pairs(PlayerData) do
+        color.scriptZone.createButton({
+            click_function = "None",
+            function_owner = self,
+            label          = "0",
+            position       = {0.4, 0.25, -1},
+            rotation       = {0, 180, 0},
+            scale          = {0.2, 0, 0.25},
+            width          = 0,
+            height         = 0,
+            font_size      = 500,
+            color          = "White",
+            font_color     = "Grey",
+        })
     end
-
-    -- create bust buttons and save scriptingZone to PlayerData
-    for _, v in pairs(getObjects()) do
-        if v.type == "Scripting" then
-            v.createButton({
-                click_function = "None",
-                function_owner = self,
-                label          = "0",
-                position       = {0.4, 0.25, -1},
-                rotation       = {0, 180, 0},
-                scale          = {0.2, 0, 0.25},
-                width          = 0,
-                height         = 0,
-                font_size      = 500,
-                color          = "White",
-                font_color     = "Grey",
-            })
-            PlayerData[v.getGMNotes()].scriptZone = v
-        end
-    end
-
-    Score = {} -- could be moved to PlayerData?
-    BaseGame = true
-    IsBrutal = false -- only available in vengeance mode
-    HasBeenPewd = false
-    StartingPlayer = -1
 
     BaseBag = getObjectFromGUID("314599")
     ExpBag = getObjectFromGUID("ff1e2d")
@@ -215,19 +268,6 @@ function onLoad()
     StayBag.interactable = false
     BustedBag.interactable = false
     NextPlayerBag.interactable = false
-
-    -- Init deck with base game
-    DeckMode = DeckModes.Base
-    Deck2 = Scan2()
-    SetModeSelection()
-
-    local hotKeyFunctions = {"Hit", "Stay", "Bust"}
-    for _, func in pairs(hotKeyFunctions) do
-        addHotkey(func, function(color, object, pos, keyUp) if keyUp and StartingPlayer > 0 then _G[func](object, color, false) end end, true)
-    end
-
-    -- Running CountItems two times a second
-    Wait.time(CountItems, 0.5, -1)
 end
 
 function None() end
@@ -661,7 +701,8 @@ function Hit(object, color, alt)
         broadcastToColor("Please wait until a new round has started", color)
         return false
     end
-    if PlayerData[color].cardCount >= 7 then return end
+    local playerData = PlayerData[color]
+    if playerData.cardCount >= 7 then return end
 
     if NextPlayerStartToken then
         NextPlayerStartToken.destruct()
@@ -672,18 +713,33 @@ function Hit(object, color, alt)
     lastHit = os.time()
 
     local drawcard = Scan()
-    local targetSnapPoints = nil
-    if drawcard.hasTag("number") then
-        targetSnapPoints = PlayerData[color].snapPoints.numbers
-    elseif drawcard.hasTag("special") then
-        targetSnapPoints = PlayerData[color].snapPoints.special
+    if drawcard == nil then return end
+
+    if drawcard.hasTag("seven") then
+        ResetPlayerCards(color)
     end
 
-    for _, point in ipairs(targetSnapPoints) do
-        if not IsSnapPointOccupied(point) then
-            drawcard.setPositionSmooth(point.position, false, false)
-            drawcard.setRotation(Vector(0, PlayerData[color].positionData.handTransform.rotation.y + 180, 0))
-            break
+    local targetSnapPoints = nil
+    if drawcard.hasTag("number") then
+        targetSnapPoints = playerData.snapPoints.numbers
+    elseif drawcard.hasTag("special") then
+        targetSnapPoints = playerData.snapPoints.special
+    end
+
+    if targetSnapPoints then
+        local foundSpaceForCard = false
+        for _, point in ipairs(targetSnapPoints) do
+            if not IsSnapPointOccupied(point) then
+                drawcard.setPositionSmooth(point.position, false, false)
+                drawcard.setRotation(Vector(0, playerData.positionData.handTransform.rotation.y + 180, 0))
+                foundSpaceForCard = true
+                break
+            end
+        end
+
+        -- if no more space, just deal to the players hand
+        if not foundSpaceForCard then
+            drawcard.deal(1, color)
         end
     end
 

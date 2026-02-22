@@ -454,7 +454,7 @@ function NewRoundCheck(object, color, alt)
     if alt then return end
     if AllPlayersDone() then return NewRound() end
 
-    Player[color].showConfirmDialog("Not everyone is finished. Start next round anyway?", NewRound)
+    Player[color].showConfirmDialog("Not everyone has finished. Start the next round anyway?", NewRound)
 end
 
 function NewRound()

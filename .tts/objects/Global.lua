@@ -1,6 +1,7 @@
 -- CONSTS
 local MSG_BUSTED = "%s got busted!"
 local MSG_2ND_CHANCE = "Time for %s to use their second chance!"
+local BUSTED_CARD_HIGHLIGHT_DURATION = 3
 
 -- ENUMS
 PlayerStatus = {
@@ -543,21 +544,40 @@ function CountItems()
                 local number = tonumber(description)
 
                 if number then
-                    local seenNumberCount = seenNumbers[number] or 0
+                    local seenNumberCount = 0
+                    local seenNumberTableData = seenNumbers[number]
+                    if seenNumberTableData then
+                        seenNumberCount = seenNumberTableData.count
+                    end
+
 					if seenNumberCount == 0 or (number == 13 and seenNumberCount == 1 and hasLuckyThirteen) then
-						seenNumbers[number] = seenNumberCount + 1
-						numberSum[i] = numberSum[i] + number
+                        numberSum[i] = numberSum[i] + number
+
+                        if not seenNumbers[number] then
+                            seenNumbers[number] = {}
+                        end
+
+						seenNumbers[number].count = seenNumberCount + 1
+                        -- save the seen object, except for the lucky 13
+                        if not scriptZoneObject.hasTag("thirteen") then
+                            seenNumbers[number].obj = scriptZoneObject
+                        end
 					else
 						hasDuplicateNumber = true
 						if not HasBeenPewd then
                             local player = Player[color]
-                            local broadcastMessage = (hasSecondChance and MSG_2ND_CHANCE or MSG_BUSTED):format(player.steam_name or player.color)
-							broadcastToAll(broadcastMessage, player.color)
-							if hasSecondChance then
-                               player.pingTable(hasSecondChance.getPosition())
-                            end
+                            local broadcastMessage = (hasSecondChance and MSG_2ND_CHANCE or MSG_BUSTED):format(player.steam_name or color)
+							broadcastToAll(broadcastMessage, color)
                             PlayerData[color].status = PlayerStatus.ActionRequired
 							HasBeenPewd = true
+
+                            -- visual notifications
+                            scriptZoneObject.highlightOn("Red", BUSTED_CARD_HIGHLIGHT_DURATION)
+                            seenNumberTableData.obj.highlightOn("Red", BUSTED_CARD_HIGHLIGHT_DURATION)
+							if hasSecondChance then
+                               player.pingTable(hasSecondChance.getPosition())
+                               hasSecondChance.highlightOn("White", BUSTED_CARD_HIGHLIGHT_DURATION)
+                            end
 						end
 					end
                 end

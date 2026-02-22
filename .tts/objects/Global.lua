@@ -151,9 +151,8 @@ function onLoad()
                 center = center
             },
             snapPoints = {
-                action = {},
                 numbers = {},
-                modifiers = {}
+                special = {}
             }
         }
 
@@ -166,7 +165,7 @@ function onLoad()
             if tagSet[playerColor] then
                 local categoryMap = {
                     number = PlayerData[playerColor].snapPoints.numbers,
-                    modifiers = PlayerData[playerColor].snapPoints.modifiers
+                    special = PlayerData[playerColor].snapPoints.special
                 }
 
                 for category, targetTable in pairs(categoryMap) do

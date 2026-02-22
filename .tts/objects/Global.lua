@@ -70,7 +70,7 @@ function onLoad()
 
     -- Init deck with base game
     DeckMode = DeckModes.Base
-    Deck2 = Scan2()
+    --Deck2 = Scan2()
     SetModeSelection()
 
     local hotKeyFunctions = {"Hit", "Stay", "Bust"}
@@ -419,24 +419,22 @@ function ModeSelDown()
 end
 
 function SetModeSelection()
+    if Deck2 then Deck2.destruct() end
     if DeckMode == 1 then
         BaseGame = true
-        Deck2.destruct()
         Deck2 = BaseBag.takeObject()
 
         StartBtn.editButton({index=0, label="Flip 7"})
         StartBtn.editButton({index=4, label=""})
     elseif DeckMode == 2 then
         BaseGame = false
-        Deck2.destruct()
         Deck2 = ExpBag.takeObject()
 
         StartBtn.editButton({index=0, label="Flip 7 With A Vengeance"})
         StartBtn.editButton({index=4, label="Brutal Mode [ ]"})
-        
+
     elseif DeckMode == 3 then
         BaseGame = false
-        Deck2.destruct()
         Deck2 = FusionBag.takeObject()
 
         StartBtn.editButton({index=0, label="Flip 7 Fusion Deck", tooltip="Base and Vengeance combined!"})
@@ -736,7 +734,7 @@ function Hit(object, color, alt)
         ResetPlayerCards(color)
     end
 
-    local targetSnapPoints = nil
+    local targetSnapPoints
     if drawcard.hasTag("number") then
         targetSnapPoints = playerData.snapPoints.numbers
     elseif drawcard.hasTag("special") then

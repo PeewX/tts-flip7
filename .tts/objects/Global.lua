@@ -43,13 +43,10 @@ function IsSnapPointOccupied(snapPoint)
     local snapPos = snapPoint.position
 
     -- get objects near the snap point
-    local nearby = Physics.cast({
+    local nearby = UsePhysicsCast({
         origin       = snapPos,
         direction    = {0, 1, 0},
-        type         = 3,          -- sphere cast
-        size         = {0.5, 0.5, 0.5},
-        max_distance = 0,
-        debug        = false
+        max_distance = 0
     })
 
     for _, v in pairs(nearby) do
@@ -765,14 +762,9 @@ function Hit(object, color, alt)
 
     -- reshuffle draw deck if empty
     local drawPileHasCards = false
-    local objectsNearDrawPile = Physics.cast({
+    local objectsNearDrawPile = UsePhysicsCast({
         origin       = {-1.60, 1.83, 1.13},
-        direction    = {0, -1, 0},
-        type         = 3,
-        size         = {1, 1, 1},
-        orientation  = {0, 0, 0},
         max_distance = 3,
-        debug        = false,
     })
 
     for _, v in pairs(objectsNearDrawPile) do
@@ -781,14 +773,9 @@ function Hit(object, color, alt)
         end
     end
     if not drawPileHasCards then
-        local objectsNearDiscardPile = Physics.cast({
+        local objectsNearDiscardPile = UsePhysicsCast({
             origin       = {2.06, 1.49, 1.07},
-            direction    = {0, -1, 0},
-            type         = 3,
-            size         = {1, 1, 1},
-            orientation  = {0, 0, 0},
-            max_distance = 3,
-            debug        = false,
+            max_distance = 3
         })
 
         for _, v in pairs(objectsNearDiscardPile) do
@@ -832,20 +819,10 @@ function AllPlayersDone()
     return true
 end
 
-function castParams(origin)
-    return {
-       origin       = origin,
-       direction    = {0, -1, 0},
-       type         = 3,
-       size         = {1, 1, 1},
-       orientation  = {0, 0, 0},
-       max_distance = 1,
-       debug        = false,
-    }
-end
-
 function Scan()
-    local deckscan = Physics.cast(castParams({-2, 2, 1}))
+    local deckscan = UsePhysicsCast({
+        origin = {-2, 2, 1}
+    })
     IsEmpty = true
 
     for _, v in ipairs(deckscan) do
@@ -862,7 +839,9 @@ function Scan()
 end
 
 function Scan2()
-    local deckscan = Physics.cast(castParams({-2, 2, 1}))
+    local deckscan = UsePhysicsCast({
+        origin = {-2, 2, 1}
+    })
 
     for _, v in pairs(deckscan) do
         if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
@@ -981,8 +960,20 @@ function UpdateScoreBoard()
     UI.setXml(xml)
 end
 
------- Utils
+------ TTS specific utils
+function UsePhysicsCast(customCastParams)
+    return Physics.cast({
+        origin       = customCastParams.origin       or {0, 0, 0},
+        direction    = customCastParams.direction    or {0, -1, 0},
+        type         = customCastParams.type         or 3,
+        size         = customCastParams.size         or {1, 1, 1},
+        orientation  = customCastParams.orientation  or {0, 0, 0},
+        max_distance = customCastParams.max_distance or 1,
+        debug        = customCastParams.debug        or false,
+    })
+end
 
+------ Utils
 function table.size(T)
     local count = 0
     for _ in pairs(T) do count = count + 1 end

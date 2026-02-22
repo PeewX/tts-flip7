@@ -38,6 +38,28 @@ function getSeatedPlayers()
     return sortedPlayers
 end
 
+function IsSnapPointOccupied(snapPoint)
+    local snapPos = snapPoint.position
+
+    -- get objects near the snap point
+    local nearby = Physics.cast({
+        origin       = snapPos,
+        direction    = {0, 1, 0},
+        type         = 3,          -- sphere cast
+        size         = {0.5, 0.5, 0.5},
+        max_distance = 0,
+        debug        = false
+    })
+
+    for _, v in pairs(nearby) do
+        if v.hit_object ~= nil and (v.hit_object.type == "Deck" or v.hit_object.type == "Card") then
+            return true
+        end
+    end
+
+    return false
+end
+
 function onLoad()
     StartBtn = getObjectFromGUID("5324c0")
     HitBtn = getObjectFromGUID("e7358b")
@@ -112,6 +134,7 @@ function onLoad()
         font_size      = 700
     })
 
+    local snapPoints = Global.getSnapPoints()
     for _, playerColor in pairs(PLAYER_COLORS) do
         local handTransform = Player[playerColor].getHandTransform()
         local angleY = math.rad(handTransform.rotation.y)
@@ -126,8 +149,33 @@ function onLoad()
                 angleY = angleY,
                 forward = forward,
                 center = center
+            },
+            snapPoints = {
+                action = {},
+                numbers = {},
+                modifiers = {}
             }
         }
+
+        for _, snapPoint in pairs(snapPoints) do
+            local tagSet = {}
+            for _, tag in pairs(snapPoint.tags) do
+                tagSet[tag] = true
+            end
+
+            if tagSet[playerColor] then
+                local categoryMap = {
+                    number = PlayerData[playerColor].snapPoints.numbers,
+                    modifiers = PlayerData[playerColor].snapPoints.modifiers
+                }
+
+                for category, targetTable in pairs(categoryMap) do
+                    if tagSet[category] then
+                        table.insert(targetTable, snapPoint)
+                    end
+                end
+            end
+        end
     end
 
     -- create bust buttons and save scriptingZone to PlayerData
@@ -176,7 +224,7 @@ function onLoad()
 
     local hotKeyFunctions = {"Hit", "Stay", "Bust"}
     for _, func in pairs(hotKeyFunctions) do
-        addHotkey(func, function(color, object, pos, keyUp) if keyUp and StartingPlayer > 0 then _G[func](object, color, false) end end, true)     
+        addHotkey(func, function(color, object, pos, keyUp) if keyUp and StartingPlayer > 0 then _G[func](object, color, false) end end, true)
     end
 
     -- Running CountItems two times a second
@@ -624,158 +672,25 @@ function Hit(object, color, alt)
     if os.time() - lastHit < 0.5 then return end
     lastHit = os.time()
 
-    local player3DData = PlayerData[color].positionData
-    local handTransform = player3DData.handTransform
-    local angleY = player3DData.angleY
-    local forward = player3DData.forward
-    local center = player3DData.center
-
-    local spacingX = 3
-    local offsetZ_up = 2
-    local offsetZ_down = -2
-
-    local emptyIndex, emptyIndex2 = nil, nil
-    local emptyPos, emptyPos2 = nil, nil
-    local filled, filled2 = false, false
-
-    -- 위쪽 3칸 (1 ~ 3)
-    for i = -1, 1 do
-        local localOffset = RotateOffset(spacingX * i, offsetZ_up, angleY)
-        local origin = center + localOffset
-        local hitList = Physics.cast({
-            origin       = origin + Vector(0, -3, 0),
-            direction    = {0, -1, 0},
-            type         = 3,
-            size         = {1, 1, 1},
-            orientation  = {0, 0, 0},
-            max_distance = 3,
-            debug        = false,
-        })
-
-        filled = false
-        for _, v in pairs(hitList) do
-            if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                filled = true
-                break
-            end
-        end
-
-        if not filled then
-            emptyIndex = (i + 2)  -- i = -1 → 1번칸, 0 → 2번칸, 1 → 3번칸
-            emptyPos = origin + Vector(0, -3.3, 0)
-            break
-        end
-    end
-
-    -- 위쪽 3칸이 차면 아래쪽 첫 번째 칸에서 드로우 시작
-    if not emptyIndex then
-        for i = -2, 1 do
-            local x = spacingX * i + spacingX / 2
-            local localOffset = RotateOffset(x, offsetZ_down, angleY)
-            local origin = center + localOffset
-            local hitList2 = Physics.cast({
-                origin       = origin + Vector(0, -3, 0),
-                direction    = {0, -1, 0},
-                type         = 3,
-                size         = {1, 1, 1},
-                orientation  = {0, 0, 0},
-                max_distance = 3,
-                debug        = false,
-            })
-
-            filled = false
-            for _, v in ipairs(hitList2) do
-                if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                    filled = true
-                    break
-                end
-            end
-
-            -- 비어있는 칸을 찾으면 emptyIndex를 설정
-            if not filled then
-                emptyIndex = (i + 5)  -- i = -2 → 3번 + 1 = 4, -1 → 5, 0 → 6, 1 → 7
-                emptyPos = origin + Vector(0, -3.3, 0)
-                break
-            end
-        end
-    end
-
-    for i = -2, 2 do  -- 5개 칸 (i = -2, -1, 0, 1, 2)
-        local x = spacingX * i  -- x 값 조정: 좌우 간격 유지
-        local localOffset = RotateOffset(x, offsetZ_down, angleY)
-        local origin = handTransform.position + forward * 11 + localOffset
-        local hitList3 = Physics.cast({
-            origin       = origin + Vector(0, -3, 0),
-            direction    = {0, -1, 0},
-            type         = 3,
-            size         = {1, 1, 1},
-            orientation  = {0, 0, 0},
-            max_distance = 3,
-            debug        = false,
-        })
-
-        filled2 = false
-        for _, v in pairs(hitList3) do
-            if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-                filled2 = true
-                break
-            end
-        end
-
-        if not filled2 then
-            emptyPos2 = origin + Vector(0, -3.3, 0)
-            break
-        end
-    end
-
     local drawcard = Scan()
-    if IsEmpty then
-        local discardCheck = Physics.cast({
-            origin       = {2.06, 1.49, 1.07},
-            direction    = {0, -1, 0},
-            type         = 3,
-            size         = {1, 1, 1},
-            max_distance = 3,
-        })
+    local targetSnapPoints = nil
+    if drawcard.hasTag("number") then
+        targetSnapPoints = PlayerData[color].snapPoints.numbers
+    elseif drawcard.hasTag("special") then
+        targetSnapPoints = PlayerData[color].snapPoints.special
+    end
 
-        for _, v in ipairs(discardCheck) do
-            if v.hit_object.type == "Deck" then
-                local discardDeck = v.hit_object
-
-                -- draw pile 위치로 이동
-                discardDeck.setPositionSmooth({-1.60, 2.3, 1.13}, false, true)
-                discardDeck.setRotation({0, 180, 180})
-                discardDeck.shuffle()
-                -- 다시 scan
-                drawcard = Scan()
-
-                break
-            end
+    for _, point in ipairs(targetSnapPoints) do
+        if not IsSnapPointOccupied(point) then
+            drawcard.setPositionSmooth(point.position, false, false)
+            drawcard.setRotation(Vector(0, PlayerData[color].positionData.handTransform.rotation.y + 180, 0))
+            break
         end
-
-        -- IsEmpty will be updated in scan()
-        if IsEmpty then return end
-    end
-    if not drawcard then return end
-
-    if drawcard.hasTag("special") then
-        drawcard.setPositionSmooth(emptyPos2, false, false)
-        drawcard.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
-    else
-        drawcard.setPositionSmooth(emptyPos,false,false)
-        drawcard.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
     end
 
-    if drawcard.hasTag("seven") then
-        ResetPlayerCards(color)
-        local firstSlotOffset = RotateOffset(spacingX * -1, offsetZ_up, angleY)
-        local firstSlotPos = center + firstSlotOffset + Vector(0, -3.3, 0)
-        drawcard.setPositionSmooth(firstSlotPos, false, false)
-        drawcard.setRotation(Vector(0, handTransform.rotation.y + 180, 0))
-    end
-
-    local isDeck = false
-    local hitcheck = Physics.cast({
+    -- reshuffle draw deck if empty
+    local drawPileHasCards = false
+    local objectsNearDrawPile = Physics.cast({
         origin       = {-1.60, 1.83, 1.13},
         direction    = {0, -1, 0},
         type         = 3,
@@ -785,13 +700,13 @@ function Hit(object, color, alt)
         debug        = false,
     })
 
-    for _, v in pairs(hitcheck) do
+    for _, v in pairs(objectsNearDrawPile) do
         if v.hit_object.type == "Deck" then
-            isDeck = true
+            drawPileHasCards = true
         end
     end
-    if not isDeck then
-        local hitcheck2 = Physics.cast({
+    if not drawPileHasCards then
+        local objectsNearDiscardPile = Physics.cast({
             origin       = {2.06, 1.49, 1.07},
             direction    = {0, -1, 0},
             type         = 3,
@@ -801,7 +716,7 @@ function Hit(object, color, alt)
             debug        = false,
         })
 
-        for _, v in pairs(hitcheck2) do
+        for _, v in pairs(objectsNearDiscardPile) do
             if v.hit_object.type == "Deck" then
                 v.hit_object.setPositionSmooth({-1.60, 2.3, 1.13}, false, true)
                 v.hit_object.setRotation({0, 180, 180})
@@ -842,18 +757,20 @@ function AllPlayersDone()
     return true
 end
 
-local castParams = {
-    origin       = {-2, 2, 1},
-    direction    = {0, -1, 0},
-    type         = 3,
-    size         = {1, 1, 1},
-    orientation  = {0, 0, 0},
-    max_distance = 1,
-    debug        = false,
-}
+function castParams(origin)
+    return {
+       origin       = origin,
+       direction    = {0, -1, 0},
+       type         = 3,
+       size         = {1, 1, 1},
+       orientation  = {0, 0, 0},
+       max_distance = 1,
+       debug        = false,
+    }
+end
 
 function Scan()
-    local deckscan = Physics.cast(castParams)
+    local deckscan = Physics.cast(castParams({-2, 2, 1}))
     IsEmpty = true
 
     for _, v in ipairs(deckscan) do
@@ -870,7 +787,7 @@ function Scan()
 end
 
 function Scan2()
-    local deckscan = Physics.cast(castParams)
+    local deckscan = Physics.cast(castParams({-2, 2, 1}))
 
     for _, v in pairs(deckscan) do
         if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then

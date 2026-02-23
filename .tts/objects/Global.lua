@@ -25,6 +25,7 @@ DeckModes = {
 PLAYER_COLORS = {"White", "Yellow", "Red", "Purple", "Green", "Pink", "Blue", "Orange"}
 PlayerData = {}
 NextPlayerStartToken = nil
+GameStarted = false
 
 -- Overwrite getSeatedPlayers to return the colors in correct order
 local _getSeatedPlayers = getSeatedPlayers
@@ -369,6 +370,7 @@ function StartGame()
         tooltip        = "Reset all player points and cards"
     })
 
+    GameStarted = true
     ShiftStartingPlayer(true)
 end
 
@@ -498,6 +500,8 @@ function SetBrutalModeEndScore(object, color, alt)
 end
 
 function CountItems()
+    if not GameStarted then return end
+
     local hasDuplicateNumber = false
     local numberSum, plusSum, mult, countNumbercard = {}, {}, {}, {}
     for i = 1, 8 do

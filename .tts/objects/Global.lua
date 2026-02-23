@@ -261,13 +261,11 @@ function InitButtonsAndObjects()
 
     BaseBag = getObjectFromGUID("314599")
     ExpBag = getObjectFromGUID("ff1e2d")
-    FusionBag = getObjectFromGUID("7eb9a5")
     StayBag = getObjectFromGUID("5e7ab9")
     BustedBag = getObjectFromGUID("5e7ab8")
     NextPlayerBag = getObjectFromGUID("5e7ab7")
     BaseBag.interactable = false
     ExpBag.interactable = false
-    FusionBag.interactable = false
     StayBag.interactable = false
     BustedBag.interactable = false
     NextPlayerBag.interactable = false
@@ -427,7 +425,6 @@ function SetModeSelection()
     elseif DeckMode == DeckModes.Vengeance then
         Deck2 = ExpBag.takeObject()
     elseif DeckMode == DeckModes.Fusion then
-        --Deck2 = FusionBag.takeObject()
         Deck2 = BuildFusionDeck()
     end
 

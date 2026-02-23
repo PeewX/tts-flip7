@@ -3,6 +3,12 @@ local MSG_BUSTED = "%s got busted!"
 local MSG_2ND_CHANCE = "Time for %s to use their second chance!"
 local BUSTED_CARD_HIGHLIGHT_DURATION = 3
 
+DECK_INFO = {
+    {Name = "Flip 7", ShortName = "Flip 7", Tooltip = "", Brutal = false},
+    {Name = "Flip 7 With A Vengeance", ShortName = "Flip 7 Vengeance", Tooltip = "", Brutal = true},
+    {Name = "Flip 7 Fusion Deck", ShortName = "Flip 7 Fusion ", Tooltip = "Base and Vengeance combined!", Brutal = true},
+}
+
 -- ENUMS
 PlayerStatus = {
     Default = 0,
@@ -64,7 +70,6 @@ function onLoad()
     InitButtonsAndObjects()
 
     Score = {} -- could be moved to PlayerData?
-    BaseGame = true
     IsBrutal = false -- only available in vengeance mode
     HasBeenPewd = false
     StartingPlayer = -1
@@ -271,12 +276,10 @@ end
 function None() end
 
 function Brutal()
-    if BaseGame then return end
+    if not DECK_INFO[DeckMode].Brutal then return end
     IsBrutal = not IsBrutal
-    StartBtn.editButton({
-        index = 4,
-        label = ("Brutal Mode [%s]"):format(IsBrutal and "✓" or "")
-    })
+    StartBtn.editButton({index = 4, label = ("Brutal Mode [%s]"):format(IsBrutal and "✓" or " ")})
+    UI.setAttribute("state", "text", ("%s%s"):format(DECK_INFO[DeckMode].Name, IsBrutal and " (Brutal)" or ""))
 end
 
 function StartGame()
@@ -384,10 +387,7 @@ function ResetGame(_, color, _)
 	for _, v in pairs(PlayerData) do
         v.status = PlayerStatus.Default
 
-        v.scoreTile.editInput({
-            index = 0,
-            value = 0,
-        })
+        v.scoreTile.editInput({index = 0, value = 0})
     end
 
     -- put all cards back
@@ -421,28 +421,20 @@ end
 
 function SetModeSelection()
     if Deck2 then Deck2.destruct() end
-    if DeckMode == 1 then
-        BaseGame = true
+
+    if DeckMode == DeckModes.Base then
         Deck2 = BaseBag.takeObject()
-
-        StartBtn.editButton({index=0, label="Flip 7"})
-        StartBtn.editButton({index=4, label=""})
-    elseif DeckMode == 2 then
-        BaseGame = false
+    elseif DeckMode == DeckModes.Vengeance then
         Deck2 = ExpBag.takeObject()
-
-        StartBtn.editButton({index=0, label="Flip 7 With A Vengeance"})
-        StartBtn.editButton({index=4, label="Brutal Mode [ ]"})
-
-    elseif DeckMode == 3 then
-        BaseGame = false
+    elseif DeckMode == DeckModes.Fusion then
         Deck2 = FusionBag.takeObject()
-
-        StartBtn.editButton({index=0, label="Flip 7 Fusion Deck", tooltip="Base and Vengeance combined!"})
-        StartBtn.editButton({index=4, label="Brutal Mode [ ]"})
     end
 
     IsBrutal = false
+
+    StartBtn.editButton({index = 0, label = DECK_INFO[DeckMode].Name, tooltip = DECK_INFO[DeckMode].Tooltip})
+    StartBtn.editButton({index = 4, label = DECK_INFO[DeckMode].Brutal and "Brutal Mode [ ]" or ""})
+    UI.setAttribute("state", "text", ("%s%s"):format(DECK_INFO[DeckMode].Name, IsBrutal and " (Brutal)" or ""))
 
     Deck2.setPosition({-1.60, 2.1, 1.13})
     Deck2.setRotation({0, 180, 180})
@@ -477,11 +469,8 @@ function NewRound()
         playerData.status = PlayerStatus.Default
 
         -- update score
-        currentScore = playerData.scoreTile.getInputs()[1].value
-        playerData.scoreTile.editInput({
-            index = 0,
-            value = currentScore + GetScore(playerData.scriptZone),
-        })
+        local currentScore = playerData.scoreTile.getInputs()[1].value
+        playerData.scoreTile.editInput({index = 0, value = currentScore + GetScore(playerData.scriptZone)})
     end
 
     ShiftStartingPlayer()
@@ -493,10 +482,7 @@ function SetBrutalModeEndScore(object, color, alt)
     local currentScore = object.getInputs()[1].value
     local modifierValue = object.hasTag(color) and 15 or -15
 
-    object.editInput({
-        index = 0,
-        value = currentScore + modifierValue,
-    })
+    object.editInput({index = 0, value = currentScore + modifierValue})
 end
 
 function CountItems()
@@ -654,27 +640,25 @@ function GetScore(zone)
     local plusSum = 0
     local mult = 1
     local countNumbercard = 0
-    local objects = zone.getObjects() -- get objects already in the zone
+    local objects = zone.getObjects()
 
-    for _, object in pairs(objects) do -- key = 1|2|3|etc, object = actual TTS object
+    for _, object in pairs(objects) do
         if object.hasTag("number") and object.is_face_down == false then
-            local description = object.getDescription() -- get the description
-            local number = tonumber(description)  -- convert it to a number
-            if number then -- check if you actually get a number
-                 numberSum = numberSum + number
-            end
-            countNumbercard = countNumbercard +1
+            local description = object.getDescription()
+            local number = tonumber(description)
+            if number then numberSum = numberSum + number end
+            countNumbercard = countNumbercard + 1
         end
 
         if object.hasTag("plus") and object.is_face_down == false then
-            local description = object.getDescription() -- get the description
-            local plus = tonumber(description)  -- convert it to a number
+            local description = object.getDescription()
+            local plus = tonumber(description)
             plusSum = plusSum + plus
         end
 
         if object.hasTag("mult") and object.is_face_down == false then
-            local description = object.getDescription() -- get the description
-            mult = tonumber(description) or 0 -- convert it to a number
+            local description = object.getDescription()
+            mult = tonumber(description) or 0
         end
     end
 
@@ -842,9 +826,7 @@ function AllPlayersDone()
 end
 
 function Scan()
-    local deckscan = UsePhysicsCast({
-        origin = {-2, 2, 1}
-    })
+    local deckscan = UsePhysicsCast({origin = {-2, 2, 1}})
     IsEmpty = true
 
     for _, v in ipairs(deckscan) do
@@ -861,9 +843,7 @@ function Scan()
 end
 
 function Scan2()
-    local deckscan = UsePhysicsCast({
-        origin = {-2, 2, 1}
-    })
+    local deckscan = UsePhysicsCast({origin = {-2, 2, 1}})
 
     for _, v in pairs(deckscan) do
         if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
@@ -926,9 +906,7 @@ function UpdateScoreBoard()
         end
     end
 
-    table.sort(activePlayers, function(a, b)
-        return a.total.text > b.total.text
-    end)
+    table.sort(activePlayers, function(a, b) return a.total.text > b.total.text end)
 
     UI.setAttribute("table", "height", 40 + (#activePlayers * 24))
     for i, player in ipairs(activePlayers) do

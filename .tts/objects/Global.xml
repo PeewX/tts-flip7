@@ -18,6 +18,10 @@
     </Defaults>
 
     <Row>
+        <Panel color="#000000AA"><Text id="state" fontSize="16" fontStyle="Italic" color="#808080" text="Flip 7"/></Panel>
+    </Row>
+
+    <Row>
         <Cell><Panel><Text class="headerText" text=" Player" alignment="MiddleLeft"/></Panel></Cell>
         <Cell><Panel><Text class="headerText" text="Round" /></Panel></Cell>
         <Cell><Panel><Text class="headerText" text="Game" /></Panel></Cell>

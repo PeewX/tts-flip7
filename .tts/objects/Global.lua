@@ -877,8 +877,7 @@ function ShiftStartingPlayer(init)
 end
 
 function UpdateScoreBoard()
-    local players = {}
-
+    local activePlayers = {}
     for i, color in ipairs(PLAYER_COLORS) do
         if Player[color].seated then
             local roundScore = Score[i] or 0
@@ -894,68 +893,44 @@ function UpdateScoreBoard()
                 textColor = "#AAAAAA"
             end
 
-            table.insert(players, {
-                name = Player[color].steam_name,
-                roundScore = roundScore,
-                gameScore = gameScore,
-                potentialScore = potentialScore,
-                textColor = textColor
+            table.insert(activePlayers, {
+                name = {
+                    text = " " .. Player[color].steam_name,
+                    color = textColor
+                },
+                round = {
+                    text = roundScore,
+                    color = textColor
+                },
+                game = {
+                    text = gameScore,
+                    color = textColor
+                },
+                total = {
+                    text = potentialScore,
+                    color = textColor
+                }
             })
         end
     end
 
-    table.sort(players, function(a, b)
-        return a.potentialScore > b.potentialScore
+    table.sort(activePlayers, function(a, b)
+        return a.total.text > b.total.text
     end)
 
-    local rows = ""
-
-    for _, p in ipairs(players) do
-        rows = rows .. string.format([[
-            <Row>
-                <Defaults>
-                    <Text color="%s" />
-                </Defaults>
-                <Cell><Text text=" %s" alignment="MiddleLeft"/></Cell>
-                <Cell><Text text="%d" /></Cell>
-                <Cell><Text text="%d" /></Cell>
-                <Cell><Text text="(%d)" /></Cell>
-            </Row>
-        ]], p.textColor, p.name, p.roundScore, p.gameScore, p.potentialScore)
+    UI.setAttribute("table", "height", 40 + (#activePlayers * 24))
+    for i, p in ipairs(activePlayers) do
+        UI.setAttribute("player" .. i, "active", "true")
+        UI.setAttributes("player" .. i .. "-name", p.name)
+        UI.setAttributes("player" .. i .. "-round", p.round)
+        UI.setAttributes("player" .. i .. "-game", p.game)
+        UI.setAttributes("player" .. i .. "-total", p.total)
     end
 
-    local xml = string.format([[
-    <TableLayout columnWidths="120 60 60 60"
-            width="300"
-            height="%d"
-            anchorMin="1 0.5"
-            anchorMax="1 0.5"
-            rectAlignment="MiddleRight"
-            offsetXY="-10 0"
-            allowDragging="true"
-            returnToOriginalPositionWhenReleased="false"
-            color="#000000AA"
-            cellPadding ="0">
-
-                <Defaults>
-                    <Cell dontUseTableCellBackground="true" />
-                    <Panel color="#000000AA" />
-                    <Text class="headerText" fontSize="16" fontStyle="Bold" color="#FFFFFF" />
-                    <Text fontSize="14" alignment="MiddleCenter" />
-                </Defaults>
-
-                <Row>
-                    <Cell><Panel><Text class="headerText" text=" Player" alignment="MiddleLeft"/></Panel></Cell>
-                    <Cell><Panel><Text class="headerText" text="Round" /></Panel></Cell>
-                    <Cell><Panel><Text class="headerText" text="Game" /></Panel></Cell>
-                    <Cell><Panel><Text class="headerText" text="Total" /></Panel></Cell>
-                </Row>
-
-                %s
-            </TableLayout>
-    ]], 40 + (#players * 24), rows)
-
-    UI.setXml(xml)
+    -- hide all rows without an active player
+    for i = #activePlayers + 1, #PLAYER_COLORS do
+        UI.setAttribute("player" .. i, "active", "false")
+    end
 end
 
 ------ TTS specific utils

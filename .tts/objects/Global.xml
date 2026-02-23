@@ -1,1 +1,75 @@
-<!-- Xml UI. See documentation: https://api.tabletopsimulator.com/ui/introUI/ -->
+<TableLayout columnWidths="120 60 60 60"
+             id="table"
+             width="300"
+             height="40"
+             anchorMin="1 0.5"
+             anchorMax="1 0.5"
+             rectAlignment="MiddleRight"
+             offsetXY="-10 0"
+             allowDragging="true"
+             returnToOriginalPositionWhenReleased="false"
+             color="#000000AA"
+             cellPadding ="0">
+    <Defaults>
+        <Cell dontUseTableCellBackground="true" />
+        <Panel color="#000000AA" />
+        <Text class="headerText" fontSize="16" fontStyle="Bold" color="#FFFFFF" />
+        <Text fontSize="14" alignment="MiddleCenter" />
+    </Defaults>
+
+    <Row>
+        <Cell><Panel><Text class="headerText" text=" Player" alignment="MiddleLeft"/></Panel></Cell>
+        <Cell><Panel><Text class="headerText" text="Round" /></Panel></Cell>
+        <Cell><Panel><Text class="headerText" text="Game" /></Panel></Cell>
+        <Cell><Panel><Text class="headerText" text="Total" /></Panel></Cell>
+    </Row>
+
+    <Row id="player1" active="false">
+        <Cell><Text id="player1-name" text=" Player1" alignment="MiddleLeft"/></Cell>
+        <Cell><Text id="player1-round" text="0" /></Cell>
+        <Cell><Text id="player1-game" text="0" /></Cell>
+        <Cell><Text id="player1-total" text="(0)" /></Cell>
+    </Row>
+    <Row id="player2" active="false">
+        <Cell><Text id="player2-name" text=" Player2" alignment="MiddleLeft"/></Cell>
+        <Cell><Text id="player2-round" text="0" /></Cell>
+        <Cell><Text id="player2-game" text="0" /></Cell>
+        <Cell><Text id="player2-total" text="(0)" /></Cell>
+    </Row>
+    <Row id="player3" active="false">
+        <Cell><Text id="player3-name" text=" Player3" alignment="MiddleLeft"/></Cell>
+        <Cell><Text id="player3-round" text="0" /></Cell>
+        <Cell><Text id="player3-game" text="0" /></Cell>
+        <Cell><Text id="player3-total" text="(0)" /></Cell>
+    </Row>
+    <Row id="player4" active="false">
+        <Cell><Text id="player4-name" text=" Player4" alignment="MiddleLeft"/></Cell>
+        <Cell><Text id="player4-round" text="0" /></Cell>
+        <Cell><Text id="player4-game" text="0" /></Cell>
+        <Cell><Text id="player4-total" text="(0)" /></Cell>
+    </Row>
+    <Row id="player5" active="false">
+        <Cell><Text id="player5-name" text=" Player5" alignment="MiddleLeft"/></Cell>
+        <Cell><Text id="player5-round" text="0" /></Cell>
+        <Cell><Text id="player5-game" text="0" /></Cell>
+        <Cell><Text id="player5-total" text="(0)" /></Cell>
+    </Row>
+    <Row id="player6" active="false">
+        <Cell><Text id="player6-name" text=" Player6" alignment="MiddleLeft"/></Cell>
+        <Cell><Text id="player6-round" text="0" /></Cell>
+        <Cell><Text id="player6-game" text="0" /></Cell>
+        <Cell><Text id="player6-total" text="(0)" /></Cell>
+    </Row>
+    <Row id="player7" active="false">
+        <Cell><Text id="player7-name" text=" Player7" alignment="MiddleLeft"/></Cell>
+        <Cell><Text id="player7-round" text="0" /></Cell>
+        <Cell><Text id="player7-game" text="0" /></Cell>
+        <Cell><Text id="player7-total" text="(0)" /></Cell>
+    </Row>
+    <Row id="player8" active="false">
+        <Cell><Text id="player8-name" text=" Player8" alignment="MiddleLeft"/></Cell>
+        <Cell><Text id="player8-round" text="0" /></Cell>
+        <Cell><Text id="player8-game" text="0" /></Cell>
+        <Cell><Text id="player8-total" text="(0)" /></Cell>
+    </Row>
+</TableLayout>

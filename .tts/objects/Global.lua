@@ -894,22 +894,10 @@ function UpdateScoreBoard()
             end
 
             table.insert(activePlayers, {
-                name = {
-                    text = " " .. Player[color].steam_name,
-                    color = textColor
-                },
-                round = {
-                    text = roundScore,
-                    color = textColor
-                },
-                game = {
-                    text = gameScore,
-                    color = textColor
-                },
-                total = {
-                    text = potentialScore,
-                    color = textColor
-                }
+                name = {text = " " .. Player[color].steam_name, color = textColor},
+                round = {text = roundScore, color = textColor},
+                game = {text = gameScore, color = textColor},
+                total = {text = potentialScore, color = textColor}
             })
         end
     end
@@ -919,17 +907,17 @@ function UpdateScoreBoard()
     end)
 
     UI.setAttribute("table", "height", 40 + (#activePlayers * 24))
-    for i, p in ipairs(activePlayers) do
-        UI.setAttribute("player" .. i, "active", "true")
-        UI.setAttributes("player" .. i .. "-name", p.name)
-        UI.setAttributes("player" .. i .. "-round", p.round)
-        UI.setAttributes("player" .. i .. "-game", p.game)
-        UI.setAttributes("player" .. i .. "-total", p.total)
+    for i, player in ipairs(activePlayers) do
+        UI.setAttribute(("player%d"):format(i), "active", "true")
+        UI.setAttributes(("player%d-name"):format(i), player.name)
+        UI.setAttributes(("player%d-round"):format(i), player.round)
+        UI.setAttributes(("player%d-game"):format(i), player.game)
+        UI.setAttributes(("player%d-total"):format(i), player.total)
     end
 
     -- hide all rows without an active player
     for i = #activePlayers + 1, #PLAYER_COLORS do
-        UI.setAttribute("player" .. i, "active", "false")
+        UI.setAttribute(("player%d"):format(i), "active", "false")
     end
 end
 

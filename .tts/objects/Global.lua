@@ -593,7 +593,7 @@ function CountItems()
             PlayerData[color].status = PlayerStatus.Default
         end
 
-        Score[i] = numberSum[i]*mult[i]+plusSum[i]
+        Score[i] = math.floor(numberSum[i] * mult[i] + plusSum[i])
 
         if countNumbercard[i] == 7 and not HasBeenPewd then
             if IsBrutal then

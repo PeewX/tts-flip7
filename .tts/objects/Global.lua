@@ -237,7 +237,6 @@ function InitButtonsAndObjects()
         font_size      = 700
     })
 
-    -- create bust buttons for players
     for _, color in pairs(PlayerData) do
         color.scriptZone.createButton({
             click_function = "None",
@@ -325,15 +324,15 @@ function StartGame()
         })
         if IsBrutal then
             v.scoreTile.createButton({
-                click_function = "Minus",
+                click_function = "SetBrutalModeEndScore",
                 function_owner = self,
-                label          = "-15",
+                label          = "",
                 position       = {8/Scale.x, 0, 3/Scale.z},
                 rotation       = {0, 0, 0},
                 scale          = {1.8/Scale.x, 1, 0.8/Scale.z},
                 width          = 400*Bound.size.x,
                 height         = 600*Bound.size.z,
-                color          = {0.8, 0.6, 0.6},
+                color          = {0, 0, 0, 0},
                 font_color     = "Black",
                 font_size      = 900*Bound.size.z
             })
@@ -476,28 +475,25 @@ function NewRound()
         playerData.status = PlayerStatus.Default
 
         -- update score
-        Score1 = playerData.scoreTile.getInputs()[1].value
-        Score2 = Score1 + GetScore(playerData.scriptZone)
+        currentScore = playerData.scoreTile.getInputs()[1].value
         playerData.scoreTile.editInput({
             index = 0,
-            value = Score2,
+            value = currentScore + GetScore(playerData.scriptZone),
         })
     end
 
     ShiftStartingPlayer()
 end
 
-function Minus(object, color, alt)
-    Score1 = object.getInputs()[1].value
-    Score2 = Score1 + -15
+function SetBrutalModeEndScore(object, color, alt)
+    if not IsBrutal then return end
 
-    if not IsBrutal and Score2 < 0 then
-        Score2 = 0
-    end
+    local currentScore = object.getInputs()[1].value
+    local modifierValue = object.hasTag(color) and 15 or -15
 
     object.editInput({
         index = 0,
-        value = Score2,
+        value = currentScore + modifierValue,
     })
 end
 
@@ -512,10 +508,20 @@ function CountItems()
         countNumbercard[i] = 0
     end
 
+    if IsBrutal then
+        for _, color in ipairs(PLAYER_COLORS) do
+            PlayerData[color].scoreTile.editButton({
+                index = 1,
+                label = "",
+                color = {0, 0, 0, 0}
+            })
+        end
+    end
+
     for i, color in ipairs(PLAYER_COLORS) do
-        local v = PlayerData[color].scriptZone
+        local scriptZone = PlayerData[color].scriptZone
+        local scriptZoneObjects = scriptZone.getObjects() -- get objects already in the zone
 		local seenNumbers = {}
-        local scriptZoneObjects = v.getObjects() -- get objects already in the zone
         local hasSecondChance = nil
         local hasLuckyThirteen = false
 
@@ -598,8 +604,22 @@ function CountItems()
         end
 
         Score[i] = numberSum[i]*mult[i]+plusSum[i]
-        if countNumbercard[i] == 7 then
-            Score[i] = Score[i] + 15
+
+        if countNumbercard[i] == 7 and not HasBeenPewd then
+            if IsBrutal then
+                for _, brutalPlayerColor in pairs(PLAYER_COLORS) do
+                    local buttonLabel = brutalPlayerColor == color and "+15" or "-15"
+                    local buttonColor = brutalPlayerColor == color and {0.6, 0.8, 0.6} or {0.8, 0.6, 0.6}
+
+                    PlayerData[brutalPlayerColor].scoreTile.editButton({
+                        index = 1,
+                        label = buttonLabel,
+                        color = buttonColor
+                    })
+                end
+            else
+                Score[i] = Score[i] + 15
+            end
         end
 
         -- only the special vengeance mode 0 card has the tag 'zero'
@@ -614,7 +634,7 @@ function CountItems()
         end
 
         PlayerData[color].cardCount = countNumbercard[i]
-        v.editButton({label = Score[i]})
+        scriptZone.editButton({index = 0, label = Score[i]})
     end
 
 	if not hasDuplicateNumber then
@@ -655,7 +675,7 @@ function GetScore(zone)
     end
 
     score = math.floor(numberSum * mult + plusSum)
-    if countNumbercard == 7 then
+    if countNumbercard == 7 and not IsBrutal then
         score = score + 15
     end
 

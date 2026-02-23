@@ -427,7 +427,8 @@ function SetModeSelection()
     elseif DeckMode == DeckModes.Vengeance then
         Deck2 = ExpBag.takeObject()
     elseif DeckMode == DeckModes.Fusion then
-        Deck2 = FusionBag.takeObject()
+        --Deck2 = FusionBag.takeObject()
+        Deck2 = BuildFusionDeck()
     end
 
     IsBrutal = false
@@ -439,6 +440,73 @@ function SetModeSelection()
     Deck2.setPosition({-1.60, 2.1, 1.13})
     Deck2.setRotation({0, 180, 180})
     Deck2.shuffle()
+end
+
+function BuildFusionDeck()
+    local baseDeck = BaseBag.takeObject()
+    local expDeck  = ExpBag.takeObject()
+
+    if not baseDeck or not expDeck then return end
+    local baseData = baseDeck.getData()
+    local expData = expDeck.getData()
+
+    local fusionCardObjects = {}
+    local fusionCardIds = {}
+    local fusionCustomDeck = {}
+
+    -- Add filtered cards
+    for _, card in pairs(baseData.ContainedObjects) do if FilterFusion(DeckModes.Base, card) then table.insert(fusionCardObjects, card) end end
+    for _, card in pairs(expData.ContainedObjects) do if FilterFusion(DeckModes.Vengeance, card) then table.insert(fusionCardObjects, card) end end
+
+    -- Recreate DeckIDs
+    for _, card in ipairs(fusionCardObjects) do table.insert(fusionCardIds, card.CardID) end
+
+    -- Combine customdecks and replace back covers
+    for _, CustomDecks in pairs({baseData.CustomDeck, expData.CustomDeck}) do
+        for id, deck in pairs(CustomDecks) do
+            if id then
+                if deck.BackURL then deck.BackURL = "https://steamusercontent-a.akamaihd.net/ugc/10220899063260540649/E869999FB450AA4C05C38DBDB4D81496C6A45C3B/" end
+                fusionCustomDeck[id] = deck
+            end
+        end
+    end
+
+    baseDeck.destruct()
+    expDeck.destruct()
+
+    local fusionData = baseDeck.getData()
+    fusionData.ContainedObjects = fusionCardObjects
+    fusionData.DeckIDs = fusionCardIds
+    fusionData.CustomDeck = fusionCustomDeck
+
+    baseDeck.destruct()
+    expDeck.destruct()
+    return spawnObjectData({data = fusionData})
+end
+
+function FilterFusion(mode, card)
+    local function hasTag(tag)
+        tag = tag:lower()
+        for _, t in pairs(card.Tags or {}) do
+            if t:lower() == tag then return true end
+        end
+        return false
+    end
+
+    if mode == DeckModes.Base then
+        if hasTag("number") and tonumber(card.Description) == 0 then return false end
+        return true
+    end
+
+    if mode == DeckModes.Vengeance then
+        if hasTag("special") then return true end
+        if hasTag("number") and tonumber(card.Description) == 0 then return true end
+        if hasTag("number") and tonumber(card.Description) == 7 then return true end
+        if hasTag("number") and tonumber(card.Description) == 13 then return true end
+        return false
+    end
+
+    return false
 end
 
 function NewRoundCheck(object, color, alt)

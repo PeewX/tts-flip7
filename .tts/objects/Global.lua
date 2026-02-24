@@ -31,7 +31,7 @@ DeckModes = {
 PLAYER_COLORS = {"White", "Yellow", "Red", "Purple", "Green", "Pink", "Blue", "Orange"}
 PlayerData = {}
 NextPlayerStartToken = nil
-GameStarted = false
+WaitForNewRound = true
 
 -- Overwrite getSeatedPlayers to return the colors in correct order
 local _getSeatedPlayers = getSeatedPlayers
@@ -371,7 +371,7 @@ function StartGame()
         tooltip        = "Reset all player points and cards"
     })
 
-    GameStarted = true
+    WaitForNewRound = false
     ShiftStartingPlayer(true)
 end
 
@@ -402,6 +402,7 @@ function ResetGame(_, color, _)
     end
 
     drawDeck.shuffle()
+    WaitForNewRound = false
     ShiftStartingPlayer(true)
 end
 
@@ -508,6 +509,7 @@ end
 
 function NewRoundCheck(object, color, alt)
     if alt then return end
+    if WaitForNewRound then return end
     if AllPlayersDone() then return NewRound() end
 
     Player[color].showConfirmDialog("Not everyone has finished. Start the next round anyway?", NewRound)
@@ -538,20 +540,25 @@ function NewRound()
         playerData.scoreTile.editInput({index = 0, value = currentScore + GetScore(playerData.scriptZone)})
     end
 
+    WaitForNewRound = false
     ShiftStartingPlayer()
 end
 
 function SetBrutalModeEndScore(object, color, alt)
     if not IsBrutal then return end
+    if not WaitForNewRound then return end
 
     local currentScore = object.getInputs()[1].value
     local modifierValue = object.hasTag(color) and 15 or -15
 
     object.editInput({index = 0, value = currentScore + modifierValue})
+
+    broadcastToAll(("%s has made their decision and ends the round"):format(Player[color].steam_name or color))
+    StartNewRoundWithTimer()
 end
 
 function CountItems()
-    if not GameStarted then return end
+    if not WaitForNewRound then return end
 
     local hasDuplicateNumber = false
     local numberSum, plusSum, mult, countNumbercard = {}, {}, {}, {}
@@ -674,6 +681,8 @@ function CountItems()
                 end
             else
                 Score[i] = Score[i] + 15
+                broadcastToAll(("%s has 7 cards and ends the round"):format(Player[color].steam_name or color))
+                StartNewRoundWithTimer()
             end
         end
 
@@ -789,8 +798,9 @@ function Hit(object, color, alt)
         broadcastToColor("Please wait until a new round has started", color)
         return false
     end
+    if not WaitForNewRound then return end
+
     local playerData = PlayerData[color]
-    if playerData.cardCount >= 7 then return end
 
     if NextPlayerStartToken then
         NextPlayerStartToken.destruct()
@@ -999,6 +1009,25 @@ function UsePhysicsCast(customCastParams)
         max_distance = customCastParams.max_distance or 1,
         debug        = customCastParams.debug        or false,
     })
+end
+
+function StartNewRoundWithTimer(countdown)
+    WaitForNewRound = true
+
+    countdown = countdown or 3
+    local count = countdown
+
+    broadcastToAll("Next round will start in")
+    Wait.time(
+        function()
+            if count == 0 then
+                NewRound()
+                return
+            end
+            broadcastToAll(("%d.."):format(count))
+            count = count - 1
+        end, 1, countdown
+    )
 end
 
 ------ Utils

@@ -491,11 +491,14 @@ function FilterFusion(mode, card)
     end
 
     if mode == DeckModes.Base then
+        if hasTag("number") and tonumber(card.Description) == 7 then return false end
         if hasTag("number") and tonumber(card.Description) == 0 then return false end
         return true
     end
 
     if mode == DeckModes.Vengeance then
+        if hasTag("number") and tonumber(card.Description) == 7 then return true end
+        if hasTag("number") and tonumber(card.Description) == 13 then return true end
         if hasTag("special") then return true end
         if hasTag("zero") then return true end
         if hasTag("seven") then return true end

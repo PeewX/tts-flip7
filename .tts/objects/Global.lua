@@ -76,7 +76,7 @@ function onLoad()
 
     -- Init deck with base game
     DeckMode = DeckModes.Base
-    --Deck2 = Scan2()
+    Deck2 = Scan2()
     SetModeSelection()
 
     local hotKeyFunctions = {"Hit", "Stay", "Bust"}

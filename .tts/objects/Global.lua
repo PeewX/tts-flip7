@@ -650,7 +650,7 @@ function CountItems()
 
             elseif scriptZoneObject.hasTag("mult") and scriptZoneObject.is_face_down == false then
                 local description = scriptZoneObject.getDescription()
-                mult[i] = tonumber(description)
+                mult[i] = mult[i] * (tonumber(description) or 1)
 
             elseif scriptZoneObject.hasTag("special") and scriptZoneObject.is_face_down == false then
                 -- TODO: handle special cards
@@ -726,7 +726,7 @@ function GetScore(zone)
 
         if object.hasTag("mult") and object.is_face_down == false then
             local description = object.getDescription()
-            mult = tonumber(description) or 0
+            mult = mult * (tonumber(description) or 1)
         end
     end
 

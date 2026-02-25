@@ -645,7 +645,7 @@ function CountItems()
 
             elseif scriptZoneObject.hasTag("plus") and scriptZoneObject.is_face_down == false then
                 local description = scriptZoneObject.getDescription()
-                local plus = tonumber(description)
+                local plus = tonumber(description) or 0
                 plusSum[i] = plusSum[i] + plus
 
             elseif scriptZoneObject.hasTag("mult") and scriptZoneObject.is_face_down == false then
@@ -720,7 +720,7 @@ function GetScore(zone)
 
         if object.hasTag("plus") and object.is_face_down == false then
             local description = object.getDescription()
-            local plus = tonumber(description)
+            local plus = tonumber(description) or 0
             plusSum = plusSum + plus
         end
 

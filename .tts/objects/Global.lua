@@ -558,7 +558,7 @@ function SetBrutalModeEndScore(object, color, alt)
 end
 
 function CountItems()
-    if not WaitForNewRound then return end
+    if WaitForNewRound then return end
 
     local hasDuplicateNumber = false
     local numberSum, plusSum, mult, countNumbercard = {}, {}, {}, {}
@@ -798,7 +798,7 @@ function Hit(object, color, alt)
         broadcastToColor("Please wait until a new round has started", color)
         return false
     end
-    if not WaitForNewRound then return end
+    if WaitForNewRound then return end
 
     local playerData = PlayerData[color]
 
@@ -1020,13 +1020,10 @@ function StartNewRoundWithTimer(countdown)
     broadcastToAll("Next round will start in")
     Wait.time(
         function()
-            if count == 0 then
-                NewRound()
-                return
-            end
+            if count == 0 then return NewRound() end
             broadcastToAll(("%d.."):format(count))
             count = count - 1
-        end, 1, countdown
+        end, 1, countdown + 1
     )
 end
 

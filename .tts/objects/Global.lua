@@ -172,78 +172,13 @@ end
 function InitButtonsAndObjects()
     StartBtn = getObjectFromGUID("5324c0")
     HitBtn = getObjectFromGUID("e7358b")
-    StayBtn = getObjectFromGUID("83c6d4")
-    NewroundBtn = getObjectFromGUID("4c4180")
     Scale = StartBtn.getScale()
     Bound = StartBtn.getBoundsNormalized()
 
-    StartBtn.createButton({
-        click_function = "None",
-        function_owner = self,
-        label          = "Flip 7",
-        position       = {0, 0.5, 3/Scale.z},
-        rotation       = {0, 180, 0},
-        scale          = {1/Scale.x, 1, 1/Scale.z},
-        width          = 8000,
-        height         = 1000,
-        color          = {0.9, 0.9, 0.9, 1},
-        font_color     = "Black",
-        font_size      = 700
-    })
-
-    StartBtn.createButton({
-        click_function = "StartGame",
-        function_owner = self,
-        label          = "Start Game",
-        position       = {0, 0.5, -2/Scale.z},
-        rotation       = {0, 180, 0},
-        scale          = {1/Scale.x, 1, 1/Scale.z},
-        width          = 4000,
-        height         = 1000,
-        color          = {0.6, 0.85, 0.6},
-        font_color     = "Black",
-        font_size      = 700
-    })
-
-    StartBtn.createButton({
-        click_function  = "ModeSelUp",
-        label           = "<",
-        function_owner  = self,
-        width           = 700,
-        height          = 1000,
-        position        = {-9.3/Scale.x, 0.5, 3/Scale.z},
-        scale           = {1/Scale.x, 1, 1/Scale.z},
-        font_size       = 549,
-        color           = {0.9, 0.9, 0.9, 1},
-    })
-
-    StartBtn.createButton({
-        click_function  = "ModeSelDown",
-        label           = ">",
-        function_owner  = self,
-        width           = 700,
-        height          = 1000,
-        position        = {9.3/Scale.x, 0.5, 3/Scale.z},
-        scale           = {1/Scale.x, 1, 1/Scale.z},
-        font_size       = 549,
-        color           = {0.9, 0.9, 0.9, 1},
-    })
-
-    StartBtn.createButton({
-        click_function = "Brutal",
-        function_owner = self,
-        label          = "",
-        position       = {0, 0.5, 0.5/Scale.z},
-        rotation       = {0, 180, 0},
-        scale          = {1/Scale.x, 1, 1/Scale.z},
-        width          = 6000,
-        height         = 1000,
-        color          = {0, 0, 0, 0},
-        font_color     = {1, 1, 1, 100},
-        font_size      = 700
-    })
+    StartBtn.call("CreateGamemodeSelection")
 
     for _, color in pairs(PlayerData) do
+        -- Could be moved to scoreTile?
         color.scriptZone.createButton({
             click_function = "None",
             function_owner = self,
@@ -282,94 +217,11 @@ end
 
 function StartGame()
     StartBtn.destruct()
-    HitBtn.createButton({
-        click_function = "Hit",
-        function_owner = self,
-        label          = "Hit",
-        position       = {0, 0.5, 0},
-        rotation       = {0, 180, 0},
-        scale          = {0.8/Scale.x, 1, 0.8/Scale.z},
-        width          = 700*Bound.size.x,
-        height         = 700*Bound.size.z,
-        color          = {0.6, 0.85, 0.6},
-        font_color     = "Black",
-        font_size      = 900*Bound.size.z
-    })
-
-    StayBtn.createButton({
-        click_function = "Stay",
-        function_owner = self,
-        label          = "Stay",
-        position       = {0, 0.5, 0},
-        rotation       = {0, 180, 0},
-        scale          = {0.8/Scale.x, 1, 0.8/Scale.z},
-        width          = 700*Bound.size.x,
-        height         = 700*Bound.size.z,
-        color          = {0.8, 0.8, 0.8},
-        font_color     = "Black",
-        font_size      = 900*Bound.size.z
-    })
+    HitBtn.call("CreateGameButtons")
 
     for _, v in pairs(PlayerData) do
-        v.scoreTile.createButton({
-            click_function = "Bust",
-            function_owner = self,
-            label          = "Bust",
-            position       = {0, 0, 3/Scale.z},
-            rotation       = {0, 0, 0},
-            scale          = {1.8/Scale.x, 1, 0.8/Scale.z},
-            width          = 650*Bound.size.x,
-            height         = 600*Bound.size.z,
-            color          = {0.8, 0.6, 0.6},
-            font_color     = "Black",
-            font_size      = 900*Bound.size.z
-        })
-        if IsBrutal then
-            v.scoreTile.createButton({
-                click_function = "SetBrutalModeEndScore",
-                function_owner = self,
-                label          = "",
-                position       = {8/Scale.x, 0, 3/Scale.z},
-                rotation       = {0, 0, 0},
-                scale          = {1.8/Scale.x, 1, 0.8/Scale.z},
-                width          = 400*Bound.size.x,
-                height         = 600*Bound.size.z,
-                color          = {0, 0, 0, 0},
-                font_color     = "Black",
-                font_size      = 900*Bound.size.z
-            })
-        end
+        v.scoreTile.call("CreateButtons", {IsBrutal, Scale, Bound})
     end
-
-    NewroundBtn.createButton({
-        click_function = "NewRoundCheck",
-        function_owner = self,
-        label          = "Next Round",
-        position       = {0, -1.5, 0},
-        rotation       = {0, 180, 0},
-        scale          = {1/Scale.x, 1, 1/Scale.z},
-        width          = 4000,
-        height         = 1000,
-        color          = {0, 0, 0.2, 0.9},
-        font_color     = {0.8, 0.8, 0.8, 0.9},
-        font_size      = 700,
-        tooltip        = "Update scores, start next round"
-    })
-
-    NewroundBtn.createButton({
-        click_function = "ResetGame",
-        function_owner = self,
-        label          = "New Game",
-        position       = {-7, -2, -23.25},
-        rotation       = {0, 180, 0},
-        scale          = {1/Scale.x, 1, 1/Scale.z},
-        width          = 4000,
-        height         = 1000,
-        color          = "White",
-        font_color     = "Black",
-        font_size      = 700,
-        tooltip        = "Reset all player points and cards"
-    })
 
     GameStarted = true
     ShiftStartingPlayer(true)
@@ -510,6 +362,7 @@ function FilterFusion(mode, card)
 end
 
 function NewRoundCheck(object, color, alt)
+    print("CALL")
     if alt then return end
     if AllPlayersDone() then return NewRound() end
 

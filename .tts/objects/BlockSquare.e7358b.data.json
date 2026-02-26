@@ -1,0 +1,49 @@
+{
+  "GUID": "e7358b",
+  "Name": "BlockSquare",
+  "Transform": {
+    "posX": 0.2139073,
+    "posY": 1.59961283,
+    "posZ": -2.33972168,
+    "rotX": 359.983124,
+    "rotY": -0.00007842265,
+    "rotZ": 359.920135,
+    "scaleX": 3.65834117,
+    "scaleY": 0.238181144,
+    "scaleZ": 1.72883391
+  },
+  "Nickname": "",
+  "Description": "",
+  "GMNotes": "",
+  "AltLookAngle": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "ColorDiffuse": {
+    "r": 1,
+    "g": 1,
+    "b": 1,
+    "a": 0
+  },
+  "Tags": [
+    "button"
+  ],
+  "LayoutGroupSortIndex": 0,
+  "Value": 0,
+  "Locked": true,
+  "Grid": true,
+  "Snap": true,
+  "IgnoreFoW": false,
+  "MeasureMovement": false,
+  "DragSelectable": true,
+  "Autoraise": true,
+  "Sticky": true,
+  "Tooltip": true,
+  "GridProjection": false,
+  "HideWhenFaceDown": false,
+  "Hands": false,
+  "LuaScript": "function CreateGameButtons()\r\n    local Scale = self.getScale()\r\n    local Bound = self.getBoundsNormalized()\r\n\r\n    self.createButton({\r\n        click_function = \"Hit\",\r\n        function_owner = Global,\r\n        label          = \"Hit\",\r\n        position       = {0, 0.5, 0},\r\n        rotation       = {0, 180, 0},\r\n        scale          = {0.8/Scale.x, 1, 0.8/Scale.z},\r\n        width          = 700*Bound.size.x,\r\n        height         = 700*Bound.size.z,\r\n        color          = {0.6, 0.85, 0.6},\r\n        font_color     = \"Black\",\r\n        font_size      = 900*Bound.size.z\r\n    })\r\n\r\n    self.createButton({\r\n        click_function = \"Stay\",\r\n        function_owner = Global,\r\n        label          = \"Stay\",\r\n        position       = {0, 0.5, -1.5},\r\n        rotation       = {0, 180, 0},\r\n        scale          = {0.8/Scale.x, 1, 0.8/Scale.z},\r\n        width          = 700*Bound.size.x,\r\n        height         = 700*Bound.size.z,\r\n        color          = {0.8, 0.8, 0.8},\r\n        font_color     = \"Black\",\r\n        font_size      = 900*Bound.size.z\r\n    })\r\n\r\n    self.createButton({\r\n        click_function = \"NewRoundCheck\",\r\n        function_owner = Global,\r\n        label          = \"Next Round\",\r\n        position       = {0, 0.5, 5},\r\n        rotation       = {0, 180, 0},\r\n        scale          = {1/Scale.x, 1, 1/Scale.z},\r\n        width          = 4000,\r\n        height         = 1000,\r\n        color          = {0, 0, 0.2, 0.9},\r\n        font_color     = {0.8, 0.8, 0.8, 0.9},\r\n        font_size      = 700,\r\n        tooltip        = \"Update scores, start next round\"\r\n    })\r\n\r\n    self.createButton({\r\n        click_function = \"ResetGame\",\r\n        function_owner = Global,\r\n        label          = \"New Game\",\r\n        position       = {-7, 0.5, -18.25},\r\n        rotation       = {0, 180, 0},\r\n        scale          = {1/Scale.x, 1, 1/Scale.z},\r\n        width          = 4000,\r\n        height         = 1000,\r\n        color          = \"White\",\r\n        font_color     = \"Black\",\r\n        font_size      = 700,\r\n        tooltip        = \"Reset all player points and cards\"\r\n    })\r\nend",
+  "LuaScriptState": "",
+  "XmlUI": ""
+}

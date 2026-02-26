@@ -1,0 +1,49 @@
+{
+  "GUID": "5324c0",
+  "Name": "BlockSquare",
+  "Transform": {
+    "posX": 0.191267684,
+    "posY": 1.597967,
+    "posZ": -8.034662,
+    "rotX": 359.983124,
+    "rotY": 0.00000103897582,
+    "rotZ": 359.920135,
+    "scaleX": 3.65834117,
+    "scaleY": 0.238181144,
+    "scaleZ": 1.72883391
+  },
+  "Nickname": "",
+  "Description": "",
+  "GMNotes": "",
+  "AltLookAngle": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "ColorDiffuse": {
+    "r": 0.09411543,
+    "g": 0.09411543,
+    "b": 0.09411543,
+    "a": 0
+  },
+  "Tags": [
+    "button"
+  ],
+  "LayoutGroupSortIndex": 0,
+  "Value": 0,
+  "Locked": true,
+  "Grid": true,
+  "Snap": true,
+  "IgnoreFoW": false,
+  "MeasureMovement": false,
+  "DragSelectable": true,
+  "Autoraise": true,
+  "Sticky": true,
+  "Tooltip": true,
+  "GridProjection": false,
+  "HideWhenFaceDown": false,
+  "Hands": false,
+  "LuaScript": "function CreateGamemodeSelection()\r\n    local Scale = self.getScale()\r\n    local Bound = self.getBoundsNormalized()\r\n\r\n    self.createButton({\r\n        click_function = \"None\",\r\n        function_owner = Global,\r\n        label          = \"Flip 7\",\r\n        position       = {0, 0.5, 3/Scale.z},\r\n        rotation       = {0, 180, 0},\r\n        scale          = {1/Scale.x, 1, 1/Scale.z},\r\n        width          = 8000,\r\n        height         = 1000,\r\n        color          = {0.9, 0.9, 0.9, 1},\r\n        font_color     = \"Black\",\r\n        font_size      = 700\r\n    })\r\n\r\n    self.createButton({\r\n        click_function = \"StartGame\",\r\n        function_owner = Global,\r\n        label          = \"Start Game\",\r\n        position       = {0, 0.5, -2/Scale.z},\r\n        rotation       = {0, 180, 0},\r\n        scale          = {1/Scale.x, 1, 1/Scale.z},\r\n        width          = 4000,\r\n        height         = 1000,\r\n        color          = {0.6, 0.85, 0.6},\r\n        font_color     = \"Black\",\r\n        font_size      = 700\r\n    })\r\n\r\n    self.createButton({\r\n        click_function  = \"ModeSelUp\",\r\n        label           = \"<\",\r\n        function_owner  = Global,\r\n        width           = 700,\r\n        height          = 1000,\r\n        position        = {-9.3/Scale.x, 0.5, 3/Scale.z},\r\n        scale           = {1/Scale.x, 1, 1/Scale.z},\r\n        font_size       = 549,\r\n        color           = {0.9, 0.9, 0.9, 1},\r\n    })\r\n\r\n    self.createButton({\r\n        click_function  = \"ModeSelDown\",\r\n        label           = \">\",\r\n        function_owner  = Global,\r\n        width           = 700,\r\n        height          = 1000,\r\n        position        = {9.3/Scale.x, 0.5, 3/Scale.z},\r\n        scale           = {1/Scale.x, 1, 1/Scale.z},\r\n        font_size       = 549,\r\n        color           = {0.9, 0.9, 0.9, 1},\r\n    })\r\n\r\n    self.createButton({\r\n        click_function = \"Brutal\",\r\n        function_owner = Global,\r\n        label          = \"\",\r\n        position       = {0, 0.5, 0.5/Scale.z},\r\n        rotation       = {0, 180, 0},\r\n        scale          = {1/Scale.x, 1, 1/Scale.z},\r\n        width          = 6000,\r\n        height         = 1000,\r\n        color          = {0, 0, 0, 0},\r\n        font_color     = {1, 1, 1, 100},\r\n        font_size      = 700\r\n    })\r\nend",
+  "LuaScriptState": "",
+  "XmlUI": ""
+}

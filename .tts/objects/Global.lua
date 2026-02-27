@@ -177,23 +177,6 @@ function InitButtonsAndObjects()
 
     StartBtn.call("CreateGamemodeSelection")
 
-    for _, color in pairs(PlayerData) do
-        -- Could be moved to scoreTile?
-        color.scriptZone.createButton({
-            click_function = "None",
-            function_owner = self,
-            label          = "0",
-            position       = {0.4, 0.25, -1},
-            rotation       = {0, 180, 0},
-            scale          = {0.2, 0, 0.25},
-            width          = 0,
-            height         = 0,
-            font_size      = 500,
-            color          = "White",
-            font_color     = "Grey",
-        })
-    end
-
     BaseBag = getObjectFromGUID("314599")
     ExpBag = getObjectFromGUID("ff1e2d")
     StayBag = getObjectFromGUID("5e7ab9")
@@ -216,12 +199,9 @@ function Brutal()
 end
 
 function StartGame()
-    StartBtn.destruct()
+    StartBtn.clearButtons()
     HitBtn.call("CreateGameButtons")
-
-    for _, v in pairs(PlayerData) do
-        v.scoreTile.call("CreateButtons", {IsBrutal, Scale, Bound})
-    end
+    HitBtn.call("CreateScoreTileUI", {PlayerData, IsBrutal, Scale, Bound})
 
     GameStarted = true
     ShiftStartingPlayer(true)
@@ -362,7 +342,6 @@ function FilterFusion(mode, card)
 end
 
 function NewRoundCheck(object, color, alt)
-    print("CALL")
     if alt then return end
     if AllPlayersDone() then return NewRound() end
 

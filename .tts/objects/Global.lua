@@ -214,7 +214,7 @@ function ResetGame(_, color, _)
     end
 
     -- reset player specific data
-	for _, v in pairs(PlayerData) do
+    for _, v in pairs(PlayerData) do
         v.status = PlayerStatus.Default
 
         v.scoreTile.editInput({index = 0, value = 0})
@@ -411,7 +411,7 @@ function CountItems()
     for i, color in ipairs(PLAYER_COLORS) do
         local scriptZone = PlayerData[color].scriptZone
         local scriptZoneObjects = scriptZone.getObjects() -- get objects already in the zone
-		local seenNumbers = {}
+        local seenNumbers = {}
         local hasSecondChance = nil
         local hasLuckyThirteen = false
 
@@ -441,36 +441,36 @@ function CountItems()
                         seenNumberCount = seenNumberTableData.count
                     end
 
-					if seenNumberCount == 0 or (number == 13 and seenNumberCount == 1 and hasLuckyThirteen) then
+                    if seenNumberCount == 0 or (number == 13 and seenNumberCount == 1 and hasLuckyThirteen) then
                         numberSum[i] = numberSum[i] + number
 
                         if not seenNumbers[number] then
                             seenNumbers[number] = {}
                         end
 
-						seenNumbers[number].count = seenNumberCount + 1
+                        seenNumbers[number].count = seenNumberCount + 1
                         -- save the seen object, except for the lucky 13
                         if not scriptZoneObject.hasTag("thirteen") then
                             seenNumbers[number].obj = scriptZoneObject
                         end
-					else
-						hasDuplicateNumber = true
-						if not HasBeenPewd then
+                    else
+                        hasDuplicateNumber = true
+                        if not HasBeenPewd then
                             local player = Player[color]
                             local broadcastMessage = (hasSecondChance and MSG_2ND_CHANCE or MSG_BUSTED):format(player.steam_name or color)
-							broadcastToAll(broadcastMessage, color)
+                            broadcastToAll(broadcastMessage, color)
                             PlayerData[color].status = PlayerStatus.ActionRequired
-							HasBeenPewd = true
+                            HasBeenPewd = true
 
                             -- visual notifications
                             scriptZoneObject.highlightOn("Red", BUSTED_CARD_HIGHLIGHT_DURATION)
                             seenNumberTableData.obj.highlightOn("Red", BUSTED_CARD_HIGHLIGHT_DURATION)
-							if hasSecondChance then
+                            if hasSecondChance then
                                player.pingTable(hasSecondChance.getPosition())
                                hasSecondChance.highlightOn("White", BUSTED_CARD_HIGHLIGHT_DURATION)
                             end
-						end
-					end
+                        end
+                    end
                 end
 
                 countNumbercard[i] = countNumbercard[i] + 1
@@ -527,9 +527,9 @@ function CountItems()
         scriptZone.editButton({index = 0, label = Score[i]})
     end
 
-	if not hasDuplicateNumber then
-		HasBeenPewd = false
-	end
+    if not hasDuplicateNumber then
+        HasBeenPewd = false
+    end
 
     UpdateScoreBoard()
 end

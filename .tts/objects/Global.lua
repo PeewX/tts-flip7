@@ -801,6 +801,7 @@ function ShiftStartingPlayer(init)
         if not NextPlayerStartToken then return end
         NextPlayerStartToken.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
         NextPlayerStartToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
+        Wait.time(function() NextPlayerStartToken.lock() end, 1, 1)
 
         local player = Player[seatedPlayers[StartingPlayer]]
         broadcastToAll(("%s begins.."):format(player.steam_name or player.color), player.color)

@@ -229,9 +229,8 @@ function ResetGame(_, color, _)
             v.setRotation({0, 180, 180})
         end
 
-        if v.hasTag("stay") then
-            v.destruct()
-        end
+        -- destroy begin/stay/busted marker
+        if v.hasTag("Token") then v.destruct() end
     end
 
     drawDeck.shuffle()
@@ -362,9 +361,8 @@ function NewRound()
             posCount = posCount + 0.1
         end
 
-        if v.hasTag("stay") then
-            v.destruct()
-        end
+        -- destroy begin/stay/busted marker
+        if v.hasTag("Token") then v.destruct() end
     end
 
     for _, color in pairs(PLAYER_COLORS) do

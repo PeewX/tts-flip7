@@ -33,6 +33,13 @@ PlayerData = {}
 NextPlayerStartToken = nil
 WaitForNewRound = true
 IsBrutalModeEndScoreDecisionActive = false
+GameOptions = {
+    UseAutoRestart = true
+}
+
+function UpdateGameOptions(options)
+    GameOptions = options
+end
 
 -- Overwrite getSeatedPlayers to return the colors in correct order
 local _getSeatedPlayers = getSeatedPlayers
@@ -845,6 +852,7 @@ end
 
 function StartNewRoundWithTimer(countdown)
     WaitForNewRound = true
+    if not GameOptions.UseAutoRestart then return end
 
     countdown = countdown or 3
     local count = countdown

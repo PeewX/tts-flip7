@@ -1,0 +1,46 @@
+{
+  "GUID": "98cda2",
+  "Name": "Chinese_Checkers_Piece",
+  "Transform": {
+    "posX": -29,
+    "posY": 1.1,
+    "posZ": -34.5,
+    "rotX": 0,
+    "rotY": 0,
+    "rotZ": 0,
+    "scaleX": 1.65,
+    "scaleY": 1.65,
+    "scaleZ": 1.65
+  },
+  "Nickname": "Toggle Auto Restart",
+  "Description": "",
+  "GMNotes": "",
+  "AltLookAngle": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "ColorDiffuse": {
+    "r": 0.6,
+    "g": 1,
+    "b": 0.6
+  },
+  "LayoutGroupSortIndex": 0,
+  "Value": 0,
+  "Locked": true,
+  "Grid": true,
+  "Snap": true,
+  "IgnoreFoW": false,
+  "MeasureMovement": false,
+  "DragSelectable": true,
+  "Autoraise": true,
+  "Sticky": true,
+  "Tooltip": false,
+  "GridProjection": false,
+  "HideWhenFaceDown": false,
+  "Hands": false,
+  "MaterialIndex": 1,
+  "LuaScript": "Enabled = true\r\n\r\nToggleStateData = {\r\n    [true] = {\r\n        color   = {0.6, 1, 0.6, 1},\r\n        tooltip = \"Disable automatic restarts\"\r\n    },\r\n    [false] = {\r\n        color   = {1, 1, 1, 1},\r\n        tooltip = \"Enable automatic restarts\"\r\n    }\r\n}\r\n\r\nfunction onSave()\r\n    return JSON.encode({ enabled = Enabled })\r\nend\r\n\r\nfunction onLoad(savedData)\r\n    if savedData ~= \"\" then\r\n        Enabled = JSON.decode(savedData).enabled or Enabled\r\n    end\r\n\r\n    self.createButton({\r\n        click_function = \"None\",\r\n        function_owner = self,\r\n        position       = {0, 0.25, 0.75},\r\n        rotation       = {0, 180, 0},\r\n        height         = 0,\r\n        width          = 0,\r\n        label          = [[Automatic\r\nRestarts]],\r\n        color          = {1, 1, 1, 1},\r\n        font_color     = {1, 1, 1, 1},\r\n        font_size      = 160\r\n    })\r\n\r\n    self.createButton({\r\n        click_function = \"ToggleState\",\r\n        function_owner = self,\r\n        position       = {0, 0.25, 0},\r\n        rotation       = {0, 0, 0},\r\n        height         = 400,\r\n        width          = 400,\r\n        color          = {1, 1, 1, 0},\r\n        tooltip        = ToggleStateData[Enabled].tooltip\r\n    })\r\n\r\n    self.setColorTint(ToggleStateData[Enabled].color)\r\nend\r\n\r\nfunction ToggleState()\r\n    Enabled = not Enabled\r\n\r\n    self.editButton({\r\n        index   = 0,\r\n        tooltip = ToggleStateData[Enabled].tooltip\r\n    })\r\n\r\n    self.setColorTint(ToggleStateData[Enabled].color)\r\n\r\n    -- update game options in global lua\r\n    Global.call(\"UpdateGameOptions\", { UseAutoRestart = Enabled })\r\nend\r\n\r\nfunction None() end",
+  "LuaScriptState": "{\"cd\":{\"move\":true,\"scale\":false},\"tid\":[{\"name\":\"Felt - Green\",\"url\":\"https://i.imgur.com/eHXDjyy.jpg\"},{\"name\":\"Felt - Red\",\"url\":\"https://i.imgur.com/DbPelDi.jpg\"},{\"name\":\"Felt - Grey\",\"url\":\"https://i.imgur.com/N0O6aqj.jpg\"}]}",
+  "XmlUI": ""
+}

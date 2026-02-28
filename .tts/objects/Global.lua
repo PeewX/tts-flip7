@@ -32,6 +32,7 @@ PLAYER_COLORS = {"White", "Yellow", "Red", "Purple", "Green", "Pink", "Blue", "O
 PlayerData = {}
 NextPlayerStartToken = nil
 WaitForNewRound = true
+IsBrutalModeEndScoreDecisionActive = false
 
 -- Overwrite getSeatedPlayers to return the colors in correct order
 local _getSeatedPlayers = getSeatedPlayers
@@ -373,6 +374,15 @@ function NewRound()
         -- update score
         local currentScore = playerData.scoreTile.getInputs()[1].value
         playerData.scoreTile.editInput({index = 0, value = currentScore + GetScore(playerData.scriptZone)})
+
+        -- hide brutal mode extra buttons
+        if IsBrutal then
+            playerData.scoreTile.editButton({
+                index = 1,
+                label = "",
+                color = {0, 0, 0, 0}
+            })
+        end
     end
 
     WaitForNewRound = false
@@ -381,7 +391,8 @@ end
 
 function SetBrutalModeEndScore(object, color, alt)
     if not IsBrutal then return end
-    if not WaitForNewRound then return end
+    if not IsBrutalModeEndScoreDecisionActive then return end
+    IsBrutalModeEndScoreDecisionActive = false
 
     local currentScore = object.getInputs()[1].value
     local modifierValue = object.hasTag(color) and 15 or -15
@@ -403,16 +414,6 @@ function CountItems()
         plusSum[i] = 0
         mult[i] = 1
         countNumbercard[i] = 0
-    end
-
-    if IsBrutal then
-        for _, color in ipairs(PLAYER_COLORS) do
-            PlayerData[color].scoreTile.editButton({
-                index = 1,
-                label = "",
-                color = {0, 0, 0, 0}
-            })
-        end
     end
 
     for i, color in ipairs(PLAYER_COLORS) do
@@ -504,15 +505,18 @@ function CountItems()
 
         if countNumbercard[i] == 7 and not HasBeenPewd then
             if IsBrutal then
-                for _, brutalPlayerColor in pairs(PLAYER_COLORS) do
-                    local buttonLabel = brutalPlayerColor == color and "+15" or "-15"
-                    local buttonColor = brutalPlayerColor == color and {0.6, 0.8, 0.6} or {0.8, 0.6, 0.6}
+                if not IsBrutalModeEndScoreDecisionActive then
+                    IsBrutalModeEndScoreDecisionActive = true
+                    for _, brutalPlayerColor in pairs(PLAYER_COLORS) do
+                        local buttonLabel = brutalPlayerColor == color and "+15" or "-15"
+                        local buttonColor = brutalPlayerColor == color and {0.6, 0.8, 0.6} or {0.8, 0.6, 0.6}
 
-                    PlayerData[brutalPlayerColor].scoreTile.editButton({
-                        index = 1,
-                        label = buttonLabel,
-                        color = buttonColor
-                    })
+                        PlayerData[brutalPlayerColor].scoreTile.editButton({
+                            index = 1,
+                            label = buttonLabel,
+                            color = buttonColor
+                        })
+                    end
                 end
             else
                 Score[i] = Score[i] + 15

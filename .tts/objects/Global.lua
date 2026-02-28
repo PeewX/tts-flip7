@@ -853,19 +853,18 @@ function UsePhysicsCast(customCastParams)
 end
 
 function StartNewRoundWithTimer(countdown)
-    WaitForNewRound = true
     if not GameOptions.UseAutoRestart then return end
-
     countdown = countdown or 3
-    local count = countdown
+    WaitForNewRound = true
 
     broadcastToAll("Next round will start in")
+    broadcastToAll(("%d.."):format(countdown))
     Wait.time(
         function()
-            if count == 0 then return NewRound() end
-            broadcastToAll(("%d.."):format(count))
-            count = count - 1
-        end, 1, countdown + 1
+            countdown = countdown - 1
+            if countdown == 0 then return NewRound() end
+            broadcastToAll(("%d.."):format(countdown))
+        end, 1, countdown
     )
 end
 

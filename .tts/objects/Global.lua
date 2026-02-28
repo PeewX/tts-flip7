@@ -407,6 +407,7 @@ function SetBrutalModeEndScore(object, color, alt)
 
     broadcastToAll(("%s has made their decision and ends the round"):format(Player[color].steam_name or color))
     StartNewRoundWithTimer()
+    UpdateScoreBoard()
 end
 
 function CountItems()

@@ -230,7 +230,7 @@ function ResetGame(_, color, _)
         end
 
         -- destroy begin/stay/busted marker
-        if v.hasTag("Token") then v.destruct() end
+        if v.hasTag("token") then v.destruct() end
     end
 
     drawDeck.shuffle()
@@ -362,7 +362,7 @@ function NewRound()
         end
 
         -- destroy begin/stay/busted marker
-        if v.hasTag("Token") then v.destruct() end
+        if v.hasTag("token") then v.destruct() end
     end
 
     for _, color in pairs(PLAYER_COLORS) do
@@ -611,15 +611,7 @@ function Bust(object, color, alt)
     local playerData = PlayerData[color]
     playerData.status = PlayerStatus.Busted
 
-    -- add busted marker in player zone
-    local player3DData = playerData.positionData
-    local bustedToken = BustedBag.takeObject()
-    if not bustedToken then return end
-    bustedToken.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
-    bustedToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
-    bustedToken.setGMNotes(color)
-    bustedToken.addContextMenuItem("Unset Busted Status", RemoveToken)
-    Wait.time(function() bustedToken.lock() end, 1, 1)
+    CreateTokenForPlayer(color, BustedBag)
 end
 
 function Stay(object, color, alt)
@@ -633,15 +625,7 @@ function Stay(object, color, alt)
     local playerData = PlayerData[color]
     playerData.status = PlayerStatus.Stayed
 
-    -- add stay marker in player zone
-    local player3DData = playerData.positionData
-    local stayToken = StayBag.takeObject()
-    if not stayToken then return end
-    stayToken.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
-    stayToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
-    stayToken.setGMNotes(color)
-    stayToken.addContextMenuItem("Unset Stayed Status", RemoveToken)
-    Wait.time(function() stayToken.lock() end, 1, 1)
+    CreateTokenForPlayer(color, StayBag)
 end
 
 local lastHit = os.time()
@@ -750,7 +734,7 @@ function AllPlayersDone()
             return false
         end
     end
-    
+
     return true
 end
 
@@ -797,15 +781,8 @@ function ShiftStartingPlayer(init)
             StartingPlayer = 1
         end
 
-        -- add begin marker in player zone
-        local player3DData = PlayerData[seatedPlayers[StartingPlayer]].positionData
-        NextPlayerStartToken = NextPlayerBag.takeObject()
-        if not NextPlayerStartToken then return end
-        NextPlayerStartToken.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
-        NextPlayerStartToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
-        Wait.time(function() NextPlayerStartToken.lock() end, 1, 1)
-
         local player = Player[seatedPlayers[StartingPlayer]]
+        CreateTokenForPlayer(player.color, NextPlayerBag)
         broadcastToAll(("%s begins.."):format(player.steam_name or player.color), player.color)
     end
 end
@@ -880,6 +857,25 @@ function StartNewRoundWithTimer(countdown)
             count = count - 1
         end, 1, countdown + 1
     )
+end
+
+function CreateTokenForPlayer(color, bag)
+    local player3DData = PlayerData[color].positionData
+    local token = bag.takeObject()
+    if not token then return end
+
+    token.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
+    token.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
+
+    local bagDescription = bag.getDescription()
+    if bagDescription == "begins" then
+        NextPlayerStartToken = token
+    else
+        token.setGMNotes(color)
+        token.addContextMenuItem(("Unset %s Status"):format(bagDescription), RemoveToken)
+    end
+
+    Wait.time(function() token.lock() end, 1, 1)
 end
 
 ------ Utils

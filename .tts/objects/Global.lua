@@ -583,6 +583,17 @@ function GetScore(zone)
     return score
 end
 
+function RemoveToken(color, position, object)
+    if object and object.type == "Tile" and object.hasTag("token") then
+        --if object.getDescription() == "busted" or object.getDescription() == "stayed" then
+            if object.getGMNotes() == color then
+                object.destroy()
+                PlayerData[color].status = PlayerStatus.Default
+            end
+        --end
+    end
+end
+
 function Bust(object, color, alt)
     if IsPlayerDoneWithRound(color) then
         broadcastToColor("Please wait until a new round has started", color)
@@ -595,14 +606,18 @@ function Bust(object, color, alt)
         end
     end
 
-    PlayerData[color].status = PlayerStatus.Busted
+    local playerData = PlayerData[color]
+    playerData.status = PlayerStatus.Busted
 
     -- add busted marker in player zone
-    local player3DData = PlayerData[color].positionData
+    local player3DData = playerData.positionData
     local bustedToken = BustedBag.takeObject()
     if not bustedToken then return end
     bustedToken.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
     bustedToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
+    bustedToken.setGMNotes(color)
+    bustedToken.addContextMenuItem("Unset Busted Status", RemoveToken)
+    Wait.time(function() bustedToken.lock() end, 1, 1)
 end
 
 function Stay(object, color, alt)
@@ -614,15 +629,17 @@ function Stay(object, color, alt)
     end
 
     local playerData = PlayerData[color]
-
     playerData.status = PlayerStatus.Stayed
 
     -- add stay marker in player zone
-    local player3DData = PlayerData[color].positionData
+    local player3DData = playerData.positionData
     local stayToken = StayBag.takeObject()
     if not stayToken then return end
     stayToken.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
     stayToken.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
+    stayToken.setGMNotes(color)
+    stayToken.addContextMenuItem("Unset Stayed Status", RemoveToken)
+    Wait.time(function() stayToken.lock() end, 1, 1)
 end
 
 local lastHit = os.time()

@@ -29,6 +29,7 @@ DeckModes = {
 
 -- Globals
 PLAYER_COLORS = {"White", "Yellow", "Red", "Purple", "Green", "Pink", "Blue", "Orange"}
+TOKEN_COLORS = {["White"] = {1, 1, 1}, ["Yellow"] = {1, 0.99, 0.6}, ["Red"] = {1, 0.78, 0.78}, ["Purple"] = {0.89, 0.72, 1}, ["Green"] = {0.71, 1, 0.71}, ["Pink"] = {1, 0.75, 0.93}, ["Blue"] = {0.71, 0.85, 1}, ["Orange"] = {1, 0.73, 0.59}}
 PlayerData = {}
 NextPlayerStartToken = nil
 WaitForNewRound = true
@@ -882,6 +883,9 @@ function CreateTokenForPlayer(color, bag)
         token.setGMNotes(color)
         token.addContextMenuItem(("Unset %s Status"):format(bagDescription), RemoveToken)
     end
+
+    --local newColor = Color.fromString(color):lerp(Color.White, 0.3)
+    token.setColorTint(TOKEN_COLORS[color])
 
     Wait.time(function() token.lock() end, 1, 1)
 end

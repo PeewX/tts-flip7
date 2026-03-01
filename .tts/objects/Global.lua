@@ -366,17 +366,11 @@ function NewRound()
 
         -- update score
         local currentScore = playerData.scoreTile.getInputs()[1].value
-        playerData.scoreTile.editInput({index = 0, value = currentScore + GetScore(playerData.scriptZone)})
-
-        -- hide brutal mode extra buttons
-        if IsBrutal then
-            playerData.scoreTile.editButton({
-                index = 2,
-                label = "",
-                color = {0, 0, 0, 0}
-            })
-        end
+        playerData.scoreTile.editInput({index = 0, value = currentScore + GetScore(playerData.scriptZone)})        
     end
+
+    -- hide brutal mode extra buttons
+    if IsBrutal then HitBtn.call("ResetBrutalButton", PlayerData) end
 
     WaitForNewRound = false
     ShiftStartingPlayer()
@@ -391,6 +385,7 @@ function SetBrutalModeEndScore(object, color, alt)
     local modifierValue = object.hasTag(color) and 15 or -15
 
     object.editInput({index = 0, value = currentScore + modifierValue})
+    HitBtn.call("ResetBrutalButton", PlayerData)
 
     broadcastToAll(("%s has made their decision and ends the round"):format(Player[color].steam_name or color))
     StartNewRoundWithTimer()
@@ -505,10 +500,11 @@ function CountItems()
                         local buttonLabel = brutalPlayerColor == color and "+15" or "-15"
                         local buttonColor = brutalPlayerColor == color and {0.6, 0.8, 0.6} or {0.8, 0.6, 0.6}
 
-                        PlayerData[brutalPlayerColor].scoreTile.editButton({
-                            index = 2,
+                        PlayerData[brutalPlayerColor].scoreTile.editButton({index = 2,
                             label = buttonLabel,
-                            color = buttonColor
+                            color = buttonColor,
+                            width = 1500,
+                            height = 1040
                         })
                     end
                 end

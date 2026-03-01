@@ -111,11 +111,11 @@ function CreateScoreTileUI(params)
                 click_function = "SetBrutalModeEndScore",
                 function_owner = Global,
                 label          = "",
-                position       = {8/Scale.x, 0, 3/Scale.z},
+                position       = {-(8/Scale.x), 0, 3/Scale.z},
                 rotation       = {0, 0, 0},
                 scale          = {1.8/Scale.x, 1, 0.8/Scale.z},
-                width          = 400*Bound.size.x,
-                height         = 600*Bound.size.z,
+                width          = 0,
+                height         = 0,
                 color          = {0, 0, 0, 0},
                 font_color     = "Black",
                 font_size      = 900*Bound.size.z
@@ -138,6 +138,17 @@ function CreateScoreTileUI(params)
             font_color = {0, 0, 0, 99},
             color      = {1, 1, 1, 0},
             tab        = 2
+        })
+    end
+end
+
+function ResetBrutalButton(PlayerData)
+    for _, v in pairs(PlayerData) do
+        v.scoreTile.editButton({
+            index = 2,
+            label = "",
+            width = 0,
+            height = 0
         })
     end
 end

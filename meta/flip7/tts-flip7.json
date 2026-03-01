@@ -1,7 +1,7 @@
 {
   "SaveName": "Flip 7 [Re-Scripted]",
-  "EpochTime": 1771793001,
-  "Date": "2/22/2026 9:43:21 PM",
+  "EpochTime": 1772376449,
+  "Date": "3/1/2026 3:47:29 PM",
   "VersionNumber": "v14.1.8",
   "GameMode": "Flip 7",
   "GameType": "Game",
@@ -300,6 +300,10 @@
       {
         "displayed": "thirteen",
         "normalized": "thirteen"
+      },
+      {
+        "displayed": "token",
+        "normalized": "token"
       }
     ]
   },
@@ -577,7 +581,7 @@
       "Rotation": {
         "x": 359.920135,
         "y": 269.999969,
-        "z": 0.0168723259
+        "z": 0.0168723371
       },
       "Tags": [
         "Special",
@@ -1071,7 +1075,7 @@
         "z": -20.3500042
       },
       "Rotation": {
-        "x": 0.01687135,
+        "x": 0.0168713517,
         "y": 180.000046,
         "z": 0.07987748
       },
@@ -1103,7 +1107,7 @@
         "z": -16.3500023
       },
       "Rotation": {
-        "x": 0.0168723557,
+        "x": 0.0168723576,
         "y": 179.999969,
         "z": 0.07987784
       },
@@ -1135,7 +1139,7 @@
         "z": -16.3500023
       },
       "Rotation": {
-        "x": 0.0168703087,
+        "x": 0.01687031,
         "y": 180.0,
         "z": 0.0798755363
       },
@@ -1776,7 +1780,7 @@
       },
       "Rotation": {
         "x": 359.983124,
-        "y": 1.86146053E-06,
+        "y": 1.86146212E-06,
         "z": 359.920135
       },
       "Tags": [
@@ -1840,7 +1844,7 @@
       },
       "Rotation": {
         "x": 359.983124,
-        "y": 1.80018048E-06,
+        "y": 1.80018219E-06,
         "z": 359.920135
       },
       "Tags": [
@@ -1872,7 +1876,7 @@
       },
       "Rotation": {
         "x": 359.983124,
-        "y": 4.439106E-05,
+        "y": 4.43910649E-05,
         "z": 359.920135
       },
       "Tags": [
@@ -2001,7 +2005,7 @@
       "Rotation": {
         "x": 359.920135,
         "y": 270.001617,
-        "z": 0.0168702658
+        "z": 0.01687027
       },
       "Tags": [
         "Red",
@@ -2032,7 +2036,7 @@
       },
       "Rotation": {
         "x": 359.983124,
-        "y": -2.109488E-05,
+        "y": -2.10948838E-05,
         "z": 359.920135
       },
       "Tags": [
@@ -2052,9 +2056,9 @@
         "rotX": 0.0,
         "rotY": 0.0,
         "rotZ": 0.0,
-        "scaleX": 11.8350019,
+        "scaleX": 12.0,
         "scaleY": 7.002465,
-        "scaleZ": 4.04115963
+        "scaleZ": 4.0
       },
       "Nickname": "",
       "Description": "",
@@ -2099,9 +2103,9 @@
         "rotX": 0.0,
         "rotY": 90.0,
         "rotZ": 0.0,
-        "scaleX": 11.7380619,
+        "scaleX": 12.0,
         "scaleY": 7.0,
-        "scaleZ": 4.07947636
+        "scaleZ": 4.0
       },
       "Nickname": "",
       "Description": "",
@@ -2146,9 +2150,9 @@
         "rotX": 0.0,
         "rotY": 180.0,
         "rotZ": 0.0,
-        "scaleX": 11.8350019,
+        "scaleX": 12.0,
         "scaleY": 7.0,
-        "scaleZ": 4.041209
+        "scaleZ": 4.0
       },
       "Nickname": "",
       "Description": "",
@@ -2193,9 +2197,9 @@
         "rotX": 0.0,
         "rotY": 270.0,
         "rotZ": 0.0,
-        "scaleX": 11.7378407,
+        "scaleX": 12.0,
         "scaleY": 7.0,
-        "scaleZ": 4.079404
+        "scaleZ": 4.0
       },
       "Nickname": "",
       "Description": "",
@@ -2506,9 +2510,9 @@
         "z": 0.0
       },
       "ColorDiffuse": {
-        "r": 1.0,
+        "r": 0.6,
         "g": 1.0,
-        "b": 1.0
+        "b": 0.6
       },
       "LayoutGroupSortIndex": 0,
       "Value": 0,
@@ -2526,7 +2530,7 @@
       "Hands": false,
       "MaterialIndex": 1,
       "LuaScript": "Enabled = true\r\n\r\nToggleStateData = {\r\n    [true] = {\r\n        color   = {0.6, 1, 0.6, 1},\r\n        tooltip = \"Disable automatic restarts\"\r\n    },\r\n    [false] = {\r\n        color   = {1, 1, 1, 1},\r\n        tooltip = \"Enable automatic restarts\"\r\n    }\r\n}\r\n\r\nfunction onSave()\r\n    return JSON.encode({ enabled = Enabled })\r\nend\r\n\r\nfunction onLoad(savedData)\r\n    if savedData ~= \"\" then\r\n        Enabled = JSON.decode(savedData).enabled or Enabled\r\n    end\r\n\r\n    self.createButton({\r\n        click_function = \"None\",\r\n        function_owner = self,\r\n        position       = {0, 0.25, 0.75},\r\n        rotation       = {0, 180, 0},\r\n        height         = 0,\r\n        width          = 0,\r\n        label          = [[Automatic\r\nRestarts]],\r\n        color          = {1, 1, 1, 1},\r\n        font_color     = {1, 1, 1, 1},\r\n        font_size      = 160\r\n    })\r\n\r\n    self.createButton({\r\n        click_function = \"ToggleState\",\r\n        function_owner = self,\r\n        position       = {0, 0.25, 0},\r\n        rotation       = {0, 0, 0},\r\n        height         = 400,\r\n        width          = 400,\r\n        color          = {1, 1, 1, 0},\r\n        tooltip        = ToggleStateData[Enabled].tooltip\r\n    })\r\n\r\n    self.setColorTint(ToggleStateData[Enabled].color)\r\nend\r\n\r\nfunction ToggleState()\r\n    Enabled = not Enabled\r\n\r\n    self.editButton({\r\n        index   = 0,\r\n        tooltip = ToggleStateData[Enabled].tooltip\r\n    })\r\n\r\n    self.setColorTint(ToggleStateData[Enabled].color)\r\n\r\n    -- update game options in global lua\r\n    Global.call(\"UpdateGameOptions\", { UseAutoRestart = Enabled })\r\nend\r\n\r\nfunction None() end",
-      "LuaScriptState": "{\"cd\":{\"move\":true,\"scale\":false},\"tid\":[{\"name\":\"Felt - Green\",\"url\":\"https://i.imgur.com/eHXDjyy.jpg\"},{\"name\":\"Felt - Red\",\"url\":\"https://i.imgur.com/DbPelDi.jpg\"},{\"name\":\"Felt - Grey\",\"url\":\"https://i.imgur.com/N0O6aqj.jpg\"}]}"
+      "LuaScriptState": "{\"enabled\":true}"
     },
     {
       "GUID": "f938a2",
@@ -2801,15 +2805,15 @@
       "GUID": "5308f5",
       "Name": "HandTrigger",
       "Transform": {
-        "posX": -25.0,
+        "posX": -25.8720913,
         "posY": 5.541681,
-        "posZ": -25.0,
+        "posZ": -25.8720589,
         "rotX": 0.0,
         "rotY": 45.0000038,
         "rotZ": 0.0,
-        "scaleX": 11.8350019,
+        "scaleX": 12.0,
         "scaleY": 7.002465,
-        "scaleZ": 4.04115963
+        "scaleZ": 4.0
       },
       "Nickname": "",
       "Description": "",
@@ -2909,15 +2913,15 @@
       "GUID": "a7cd94",
       "Name": "HandTrigger",
       "Transform": {
-        "posX": 25.0,
-        "posY": 6.045181,
-        "posZ": 25.0,
+        "posX": 25.860857,
+        "posY": 5.0,
+        "posZ": 25.8608761,
         "rotX": 0.0,
         "rotY": 224.999985,
         "rotZ": 0.0,
-        "scaleX": 11.8350019,
+        "scaleX": 12.0,
         "scaleY": 7.002465,
-        "scaleZ": 4.04115963
+        "scaleZ": 4.0
       },
       "Nickname": "",
       "Description": "",
@@ -2956,15 +2960,15 @@
       "GUID": "f729fd",
       "Name": "HandTrigger",
       "Transform": {
-        "posX": 25.0,
-        "posY": 6.031695,
-        "posZ": -25.0,
+        "posX": 25.98669,
+        "posY": 5.0,
+        "posZ": -25.9866676,
         "rotX": 0.0,
         "rotY": 315.0,
         "rotZ": 0.0,
-        "scaleX": 11.8350019,
+        "scaleX": 12.0,
         "scaleY": 7.002465,
-        "scaleZ": 4.04115963
+        "scaleZ": 4.0
       },
       "Nickname": "",
       "Description": "",
@@ -3003,15 +3007,15 @@
       "GUID": "dc5e66",
       "Name": "HandTrigger",
       "Transform": {
-        "posX": -25.0,
-        "posY": 6.09388065,
-        "posZ": 25.0,
+        "posX": -25.8323326,
+        "posY": 5.0,
+        "posZ": 25.8323326,
         "rotX": 0.0,
         "rotY": 135.0,
         "rotZ": 0.0,
-        "scaleX": 11.8350019,
+        "scaleX": 12.0,
         "scaleY": 7.002465,
-        "scaleZ": 4.04115963
+        "scaleZ": 4.0
       },
       "Nickname": "",
       "Description": "",
@@ -3435,9 +3439,9 @@
         "z": 0.0
       },
       "ColorDiffuse": {
-        "r": 0.09411546,
-        "g": 0.09411546,
-        "b": 0.09411546,
+        "r": 0.09411543,
+        "g": 0.09411543,
+        "b": 0.09411543,
         "a": 0.0
       },
       "Tags": [
@@ -3512,12 +3516,12 @@
       "GUID": "606554",
       "Name": "Custom_PDF",
       "Transform": {
-        "posX": -34.3293571,
+        "posX": -34.3293648,
         "posY": 1.49999881,
-        "posZ": 29.5191536,
-        "rotX": -5.61321031E-06,
-        "rotY": 179.986725,
-        "rotZ": -9.979266E-07,
+        "posZ": 29.5191612,
+        "rotX": -1.85212366E-06,
+        "rotY": 179.9867,
+        "rotZ": 2.464302E-06,
         "scaleX": 1.19602633,
         "scaleY": 1.0,
         "scaleZ": 1.19602633
@@ -3563,15 +3567,15 @@
       "GUID": "ab6672",
       "Name": "ScriptingTrigger",
       "Transform": {
-        "posX": -16.45,
+        "posX": -17.4097443,
         "posY": 0.327324867,
-        "posZ": -16.45,
+        "posZ": -17.40974,
         "rotX": 0.0,
         "rotY": 45.0000038,
         "rotZ": 0.0,
         "scaleX": 12.0,
         "scaleY": 5.1,
-        "scaleZ": 8.77
+        "scaleZ": 13.0
       },
       "Nickname": "",
       "Description": "",
@@ -3609,15 +3613,15 @@
       "GUID": "28ab0a",
       "Name": "ScriptingTrigger",
       "Transform": {
-        "posX": -20.45,
+        "posX": -22.12123,
         "posY": 0.3305683,
-        "posZ": 0.0,
+        "posZ": -5.976778E-07,
         "rotX": 0.0,
         "rotY": 89.9999847,
         "rotZ": 0.0,
         "scaleX": 12.0,
         "scaleY": 5.1,
-        "scaleZ": 8.77
+        "scaleZ": 13.0
       },
       "Nickname": "",
       "Description": "",
@@ -3657,13 +3661,13 @@
       "Transform": {
         "posX": 0.0,
         "posY": 0.31,
-        "posZ": -20.45,
+        "posZ": -22.3049946,
         "rotX": 0.0,
         "rotY": 0.0,
         "rotZ": 0.0,
         "scaleX": 12.0,
         "scaleY": 5.1,
-        "scaleZ": 8.77
+        "scaleZ": 13.0
       },
       "Nickname": "",
       "Description": "",
@@ -3701,15 +3705,15 @@
       "GUID": "cabe8f",
       "Name": "ScriptingTrigger",
       "Transform": {
-        "posX": 16.45,
+        "posX": 17.3994923,
         "posY": 0.2874775,
-        "posZ": -16.45,
+        "posZ": -17.3673668,
         "rotX": 0.0,
         "rotY": 314.014221,
         "rotZ": 0.0,
         "scaleX": 12.0,
         "scaleY": 5.1,
-        "scaleZ": 8.77
+        "scaleZ": 13.0
       },
       "Nickname": "",
       "Description": "",
@@ -3747,15 +3751,15 @@
       "GUID": "859246",
       "Name": "ScriptingTrigger",
       "Transform": {
-        "posX": 20.45,
+        "posX": 22.1937714,
         "posY": 0.28,
-        "posZ": 0.0,
+        "posZ": 2.07873669E-07,
         "rotX": 0.0,
         "rotY": 270.0,
         "rotZ": 0.0,
         "scaleX": 12.0,
         "scaleY": 5.1,
-        "scaleZ": 8.77
+        "scaleZ": 13.0
       },
       "Nickname": "",
       "Description": "",
@@ -3793,15 +3797,15 @@
       "GUID": "8c5b14",
       "Name": "ScriptingTrigger",
       "Transform": {
-        "posX": 16.45,
+        "posX": 17.27636,
         "posY": 0.2854929,
-        "posZ": 16.45,
+        "posZ": 17.2763729,
         "rotX": 0.0,
         "rotY": 224.999985,
         "rotZ": 0.0,
         "scaleX": 12.0,
         "scaleY": 5.1,
-        "scaleZ": 8.77
+        "scaleZ": 13.0
       },
       "Nickname": "",
       "Description": "",
@@ -3839,15 +3843,15 @@
       "GUID": "b976a9",
       "Name": "ScriptingTrigger",
       "Transform": {
-        "posX": 0.0,
+        "posX": 6.102721E-07,
         "posY": 0.302769661,
-        "posZ": 20.45,
+        "posZ": 22.3229122,
         "rotX": 0.0,
         "rotY": 180.000015,
         "rotZ": 0.0,
         "scaleX": 12.0,
         "scaleY": 5.1,
-        "scaleZ": 8.77
+        "scaleZ": 13.0
       },
       "Nickname": "",
       "Description": "",
@@ -3885,15 +3889,15 @@
       "GUID": "9f8ec2",
       "Name": "ScriptingTrigger",
       "Transform": {
-        "posX": -16.45,
+        "posX": -17.30493,
         "posY": 0.3217659,
-        "posZ": 16.45,
+        "posZ": 17.3049335,
         "rotX": 0.0,
         "rotY": 134.999985,
         "rotZ": 0.0,
         "scaleX": 12.0,
         "scaleY": 5.1,
-        "scaleZ": 8.77
+        "scaleZ": 13.0
       },
       "Nickname": "",
       "Description": "",
@@ -14712,7 +14716,7 @@
         "posZ": 0.0009581269,
         "rotX": 359.92,
         "rotY": 269.999176,
-        "rotZ": 0.0169219114,
+        "rotZ": 0.0169219151,
         "scaleX": 1.0,
         "scaleY": 1.0,
         "scaleZ": 1.0
@@ -14821,7 +14825,7 @@
         "posZ": 0.0009581269,
         "rotX": 359.92,
         "rotY": 269.999176,
-        "rotZ": 0.0169219114,
+        "rotZ": 0.0169219151,
         "scaleX": 1.0,
         "scaleY": 1.0,
         "scaleZ": 1.0
@@ -14930,7 +14934,7 @@
         "posZ": 0.0009581269,
         "rotX": 359.92,
         "rotY": 269.999176,
-        "rotZ": 0.0169219114,
+        "rotZ": 0.0169219151,
         "scaleX": 1.0,
         "scaleY": 1.0,
         "scaleZ": 1.0
@@ -15034,12 +15038,12 @@
       "GUID": "4597c4",
       "Name": "Custom_PDF",
       "Transform": {
-        "posX": -34.3345947,
+        "posX": -34.3346,
         "posY": 1.49999809,
-        "posZ": 24.53929,
-        "rotX": -7.83130758E-07,
+        "posZ": 24.5392952,
+        "rotX": -3.308785E-07,
         "rotY": 179.9987,
-        "rotZ": -3.40632681E-07,
+        "rotZ": 1.78312587E-06,
         "scaleX": 1.19,
         "scaleY": 1.0,
         "scaleZ": 1.19

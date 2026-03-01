@@ -142,27 +142,21 @@ function InitPlayerData()
             },
             snapPoints = {
                 numbers = {},
-                special = {}
+                special = {},
+                chance = {}
             }
         }
 
         local snapPointsNumbers = PlayerData[playerColor].snapPoints.numbers
         local snapPointsSpecial = PlayerData[playerColor].snapPoints.special
+        local snapPointsChance = PlayerData[playerColor].snapPoints.chance
 
         for _, snapPoint in pairs(snapPoints) do
-            local tagSet = {}
-            for _, tag in pairs(snapPoint.tags) do
-                tagSet[tag] = true
-            end
-
-
+            local tagSet = GenTagSet(snapPoint.tags)
             if tagSet[playerColor] then
-                if tagSet["number"] then
-                    table.insert(snapPointsNumbers, snapPoint)
-                end
-                if tagSet["Special"] then
-                    table.insert(snapPointsSpecial, snapPoint)
-                end
+                if tagSet["number"] then table.insert(snapPointsNumbers, snapPoint) end
+                if tagSet["Special"] then table.insert(snapPointsSpecial, snapPoint) end
+                if tagSet["Chance"] then table.insert(snapPointsChance, snapPoint) end
             end
         end
 
@@ -323,27 +317,20 @@ function BuildFusionDeck()
 end
 
 function FilterFusion(mode, card)
-    local function hasTag(tag)
-        tag = tag:lower()
-        for _, t in pairs(card.Tags or {}) do
-            if t:lower() == tag then return true end
-        end
-        return false
-    end
-
+    local tagSet = GenTagSet(card.Tags, true)
     if mode == DeckModes.Base then
-        if hasTag("number") and tonumber(card.Description) == 7 then return false end
-        if hasTag("number") and tonumber(card.Description) == 0 then return false end
+        if tagSet["number"] and tonumber(card.Description) == 7 then return false end
+        if tagSet["number"] and tonumber(card.Description) == 0 then return false end
         return true
     end
 
     if mode == DeckModes.Vengeance then
-        if hasTag("number") and tonumber(card.Description) == 7 then return true end
-        if hasTag("number") and tonumber(card.Description) == 13 then return true end
-        if hasTag("special") then return true end
-        if hasTag("zero") then return true end
-        if hasTag("seven") then return true end
-        if hasTag("thirteen") then return true end
+        if tagSet["number"] and tonumber(card.Description) == 7 then return true end
+        if tagSet["number"] and tonumber(card.Description) == 13 then return true end
+        if tagSet["special"] then return true end
+        if tagSet["zero"] then return true end
+        if tagSet["seven"] then return true end
+        if tagSet["thirteen"] then return true end
         return false
     end
 
@@ -671,6 +658,22 @@ function Hit(object, color, alt)
         targetSnapPoints = playerData.snapPoints.special
     end
 
+    -- SecondChance
+    if drawcard.hasTag("chance") then
+        local point = playerData.snapPoints.chance[1]
+        local cards = UsePhysicsCast({origin = point.position, direction = {0, 1, 0}})
+        drawcard.setRotation(Vector(0, playerData.positionData.handTransform.rotation.y + 180, 0))
+        local targetPosition = point.position
+
+        if #cards > 1 then  -- we always get the board
+            -- It seems the topmost card is always the first index..
+            targetPosition = cards[1].hit_object.positionToWorld(Vector(-1, 0.1, 0))
+        end
+        
+        drawcard.setPositionSmooth(targetPosition, false, false)
+        targetSnapPoints = nil -- we don't need further positioning
+    end
+
     if targetSnapPoints then
         local foundSpaceForCard = false
         for _, point in ipairs(targetSnapPoints) do
@@ -888,6 +891,20 @@ function CreateTokenForPlayer(color, bag)
     token.setColorTint(TOKEN_COLORS[color])
 
     Wait.time(function() token.lock() end, 1, 1)
+end
+
+function GenTagSet(tags, lowercase)
+    local tagSet = {}
+    for _, tag in pairs(tags or {}) do tagSet[lowercase and tag:lower() or tag] = true end
+    return tagSet
+end
+
+function HasTag(tags, tag)
+    tag = tag and tag:lower() or ""
+    for _, t in pairs(tags or {}) do
+        if t:lower() == tag then return true end
+    end
+    return false
 end
 
 ------ Utils

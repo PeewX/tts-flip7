@@ -75,6 +75,21 @@ function CreateScoreTileUI(params)
         scoreTile.clearInputs()
         scriptZone.clearButtons()
 
+        -- Create round score label
+        scoreTile.createButton({
+            click_function = "None",
+            function_owner = self,
+            label          = "0",
+            position       = {-3, 0, 0},
+            rotation       = {0, 0, 0},
+            scale          = {1, 1, 1},
+            width          = 0,
+            height         = 0,
+            font_size      = 1500,
+            color          = "White",
+            font_color     = "Grey",
+        })
+
         -- Create bust buttons
         scoreTile.createButton({
             click_function = "Bust",
@@ -107,21 +122,6 @@ function CreateScoreTileUI(params)
             })
         end
 
-        -- Create round score label (why not attach to scoreTile?)
-        scriptZone.createButton({
-            click_function = "None",
-            function_owner = self,
-            label          = "0",
-            position       = {0.4, 0.25, -1},
-            rotation       = {0, 180, 0},
-            scale          = {0.2, 0, 0.25},
-            width          = 0,
-            height         = 0,
-            font_size      = 500,
-            color          = "White",
-            font_color     = "Grey",
-        })
-
         -- Create game score input
         scoreTile.createInput({
             input_function = "None",
@@ -129,7 +129,7 @@ function CreateScoreTileUI(params)
             validation = 2,
             value      = "0",
             alignment  = 3,
-            position   = {0, 0.3, 0},
+            position   = {0, 0.1, 0},
             width      = 800,
             height     = 600,
             rotation   = {0, 0, 0},

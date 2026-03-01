@@ -371,7 +371,7 @@ function NewRound()
         -- hide brutal mode extra buttons
         if IsBrutal then
             playerData.scoreTile.editButton({
-                index = 1,
+                index = 2,
                 label = "",
                 color = {0, 0, 0, 0}
             })
@@ -506,7 +506,7 @@ function CountItems()
                         local buttonColor = brutalPlayerColor == color and {0.6, 0.8, 0.6} or {0.8, 0.6, 0.6}
 
                         PlayerData[brutalPlayerColor].scoreTile.editButton({
-                            index = 1,
+                            index = 2,
                             label = buttonLabel,
                             color = buttonColor
                         })
@@ -531,7 +531,7 @@ function CountItems()
         end
 
         PlayerData[color].cardCount = countNumbercard[i]
-        scriptZone.editButton({index = 0, label = Score[i]})
+        PlayerData[color].scoreTile.editButton({index = 0, label = Score[i]})
     end
 
     if not hasDuplicateNumber then

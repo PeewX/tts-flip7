@@ -463,7 +463,7 @@ function CountItems()
                             scriptZoneObject.highlightOn("Red", BUSTED_CARD_HIGHLIGHT_DURATION)
                             seenNumberTableData.obj.highlightOn("Red", BUSTED_CARD_HIGHLIGHT_DURATION)
                             if hasSecondChance then
-                               player.pingTable(hasSecondChance.getPosition())
+                               if player.seated then player.pingTable(hasSecondChance.getPosition()) end
                                hasSecondChance.highlightOn("White", BUSTED_CARD_HIGHLIGHT_DURATION)
                             end
                         end

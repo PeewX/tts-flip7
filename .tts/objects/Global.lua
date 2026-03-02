@@ -76,7 +76,7 @@ end
 
 function onObjectDrop(color, object)
     if DeckMode == DeckModes.Base then return end
-    
+
     if object.type == "Card" and object.hasTag("special") then
         local tagSet = GenTagSet(object.getTags(), true)
         local description = object.getDescription()
@@ -400,7 +400,7 @@ function NewRound()
 
         -- update score
         local currentScore = playerData.scoreTile.getInputs()[1].value
-        playerData.scoreTile.editInput({index = 0, value = currentScore + GetScore(playerData.scriptZone)})        
+        playerData.scoreTile.editInput({index = 0, value = currentScore + GetScore(playerData.scriptZone)})
     end
 
     -- hide brutal mode extra buttons
@@ -556,9 +556,8 @@ function CountItems()
             end
         end
 
-        if IsBrutal == false and Score[i] < 0 then
-            Score[i] = 0
-        end
+        if hasDuplicateNumber and not hasSecondChance then Score[i] = 0 end
+        Score[i] = IsBrutal and Score[i] or math.max(0, Score[i])
 
         PlayerData[color].cardCount = countNumbercard[i]
         PlayerData[color].scoreTile.editButton({index = 0, label = Score[i]})
@@ -604,11 +603,7 @@ function GetScore(zone)
         score = score + 15
     end
 
-    if not IsBrutal and score < 0 then
-        score = 0
-    end
-
-    return score
+    return IsBrutal and score or math.max(0, score)
 end
 
 function RemoveToken(color, position, object)

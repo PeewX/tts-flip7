@@ -11,8 +11,7 @@ DECK_INFO = {
 
 -- ENUMS
 PlayerStatus = {
-    Hit = -1,
-    Default = 0,
+    Active = 0,
     ActionRequired = 1,
     Stayed = 2,
     Busted = 3
@@ -76,17 +75,36 @@ function IsSnapPointOccupied(snapPoint)
 end
 
 function onObjectDrop(color, object)
-    if DeckMode.Base then return end
+    if DeckMode == DeckModes.Base then return end
     
     if object.type == "Card" and object.hasTag("special") then
-        local tagSet = GenTagSet(object.Tags, true)
-        local description = object.description
+        local tagSet = GenTagSet(object.getTags(), true)
+        local description = object.getDescription()
         if tagSet["special"] and (description == "Flip3" or description == "Flip4" or description == "OneMore") then
             local targetColor = false
-            local zones = object.getZones()
-            for _, v in pairs(zones) do if v.getGMNotes() ~= color and Player[v.getGMNotes()].seated then targetColor = v end end
-            targetColor.token.setColorTint("Red")
-            -- Todo: test! + set alpha + reset alpha if card has been removed
+            for _, v in pairs(object.getZones()) do if v.getGMNotes() ~= "" and v.getGMNotes() ~= color then targetColor = v.getGMNotes() end end
+            if targetColor and Color.fromString(targetColor) then
+                local playerData = PlayerData[targetColor]
+                if playerData.status == PlayerStatus.Stayed and IsObject(playerData.token) then
+                    playerData.tokenReset = object
+                    playerData.token.setColorTint(Color(TOKEN_COLORS[targetColor]):lerp(Color.Black, 0.8))
+                end
+            end
+        end
+    end
+end
+
+function onObjectLeaveZone(zone, object)
+    if DeckMode == DeckModes.Base then return end
+    if not IsObject(object) then return end
+    if object.type ~= "Card" or not object.hasTag("special") then return end
+
+    local playerColor = zone.getGMNotes()
+    if playerColor and Color.fromString(playerColor) then
+        if PlayerData[playerColor].tokenReset == object then
+            if IsObject(PlayerData[playerColor].token) then
+                PlayerData[playerColor].token.setColorTint(TOKEN_COLORS[playerColor])
+            end
         end
     end
 end
@@ -149,7 +167,7 @@ function InitPlayerData()
         local center = handTransform.position + forward * 16
 
         PlayerData[playerColor] = {
-            status = PlayerStatus.Default,
+            status = PlayerStatus.Active,
             scoreTile = getObjectsWithAllTags({"score", playerColor})[1],
             positionData = {
                 handTransform = handTransform,
@@ -235,8 +253,7 @@ function ResetGame(_, color, _)
 
     -- reset player specific data
     for _, v in pairs(PlayerData) do
-        v.status = PlayerStatus.Default
-
+        v.status = PlayerStatus.Active
         v.scoreTile.editInput({index = 0, value = 0})
     end
 
@@ -379,7 +396,7 @@ function NewRound()
 
     for _, color in pairs(PLAYER_COLORS) do
         local playerData = PlayerData[color]
-        playerData.status = PlayerStatus.Default
+        playerData.status = PlayerStatus.Active
 
         -- update score
         local currentScore = playerData.scoreTile.getInputs()[1].value
@@ -504,7 +521,7 @@ function CountItems()
         end
 
         if not hasDuplicateNumber and PlayerData[color].status == PlayerStatus.ActionRequired then
-            PlayerData[color].status = PlayerStatus.Default
+            PlayerData[color].status = PlayerStatus.Active
         end
 
         Score[i] = math.floor(numberSum[i] * mult[i] + plusSum[i])
@@ -596,17 +613,15 @@ end
 
 function RemoveToken(color, position, object)
     if object and object.type == "Tile" and object.hasTag("token") then
-        --if object.getDescription() == "busted" or object.getDescription() == "stayed" then
-            if object.getGMNotes() == color then
-                object.destroy()
-                PlayerData[color].status = PlayerStatus.Default
-            end
-        --end
+        if object.getGMNotes() == color then
+            object.destroy()
+            PlayerData[color].status = PlayerStatus.Active
+        end
     end
 end
 
 function Bust(object, color, alt)
-    if IsPlayerDoneWithRound(color, PlayerStatus.Busted) then
+    if IsPlayerDoneWithRound(color) then
         broadcastToColor("Please wait until a new round has started", color)
         return false
     end
@@ -626,7 +641,7 @@ end
 function Stay(object, color, alt)
     if alt then return false end
     if HasBeenPewd then return false end
-    if IsPlayerDoneWithRound(color, PlayerStatus.Stayed) then
+    if IsPlayerDoneWithRound(color) then
         broadcastToColor("Please wait until a new round has started", color)
         return false
     end
@@ -641,7 +656,7 @@ local lastHit = os.time()
 function Hit(object, color, alt)
     if alt then return false end
     if HasBeenPewd then return false end
-    if IsPlayerDoneWithRound(color, PlayerStatus.Hit) then
+    if IsPlayerDoneWithRound(color) then
         broadcastToColor("Please wait until a new round has started", color)
         return false
     end
@@ -739,14 +754,13 @@ function RotateOffset(x, z, Yangle)
     return Vector(rx, 0, rz)
 end
 
-function IsPlayerDoneWithRound(color, targetStatus)
+function IsPlayerDoneWithRound(color)
     local playerStatus = PlayerData[color].status
-    if DeckMode.Base then
+    if DeckMode == DeckModes.Base then
         return playerStatus == PlayerStatus.Busted or playerStatus == PlayerStatus.Stayed
     end
-    
-    -- Return true if a player has already that status
-    if playerStatus == targetStatus then return true end
+
+    if playerStatus == PlayerStatus.Busted then return true end
 
     -- In Vengeance and Fusion you may need to hit even if stayed
     if PlayerHasCard(color, "special", "Flip3") then return false end
@@ -779,8 +793,8 @@ function ResetPlayerCards(color)
 end
 
 function AllPlayersDone()
-    for color, data in pairs(PlayerData) do
-        if not IsPlayerDoneWithRound(color) then return false end
+    for color in pairs(PlayerData) do
+        if Player[color].seated and not IsPlayerDoneWithRound(color) then return false end
     end
     return true
 end
@@ -878,6 +892,10 @@ function UpdateScoreBoard()
 end
 
 ------ TTS specific utils
+function IsObject(object)
+    return (object and not object.isDestroyed())
+end
+
 function UsePhysicsCast(customCastParams)
     return Physics.cast({
         origin       = customCastParams.origin       or {0, 0, 0},
@@ -912,7 +930,7 @@ function CreateTokenForPlayer(color, bag)
     local token = bag.takeObject()
     if not token then return end
 
-    if playerData.token then playerData.token.destruct() end
+    if playerData.token and IsObject(playerData.token) then playerData.token.destruct() end
 
     token.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
     token.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))

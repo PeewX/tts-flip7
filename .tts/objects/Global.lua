@@ -11,6 +11,7 @@ DECK_INFO = {
 
 -- ENUMS
 PlayerStatus = {
+    Hit = -1,
     Default = 0,
     ActionRequired = 1,
     Stayed = 2,
@@ -72,6 +73,22 @@ function IsSnapPointOccupied(snapPoint)
     end
 
     return false
+end
+
+function onObjectDrop(color, object)
+    if DeckMode.Base then return end
+    
+    if object.type == "Card" and object.hasTag("special") then
+        local tagSet = GenTagSet(object.Tags, true)
+        local description = object.description
+        if tagSet["special"] and (description == "Flip3" or description == "Flip4" or description == "OneMore") then
+            local targetColor = false
+            local zones = object.getZones()
+            for _, v in pairs(zones) do if v.getGMNotes() ~= color and Player[v.getGMNotes()].seated then targetColor = v end end
+            targetColor.token.setColorTint("Red")
+            -- Todo: test! + set alpha + reset alpha if card has been removed
+        end
+    end
 end
 
 function onLoad()
@@ -589,7 +606,7 @@ function RemoveToken(color, position, object)
 end
 
 function Bust(object, color, alt)
-    if IsPlayerDoneWithRound(color) then
+    if IsPlayerDoneWithRound(color, PlayerStatus.Busted) then
         broadcastToColor("Please wait until a new round has started", color)
         return false
     end
@@ -609,7 +626,7 @@ end
 function Stay(object, color, alt)
     if alt then return false end
     if HasBeenPewd then return false end
-    if IsPlayerDoneWithRound(color) then
+    if IsPlayerDoneWithRound(color, PlayerStatus.Stayed) then
         broadcastToColor("Please wait until a new round has started", color)
         return false
     end
@@ -624,7 +641,7 @@ local lastHit = os.time()
 function Hit(object, color, alt)
     if alt then return false end
     if HasBeenPewd then return false end
-    if IsPlayerDoneWithRound(color) then
+    if IsPlayerDoneWithRound(color, PlayerStatus.Hit) then
         broadcastToColor("Please wait until a new round has started", color)
         return false
     end
@@ -722,9 +739,34 @@ function RotateOffset(x, z, Yangle)
     return Vector(rx, 0, rz)
 end
 
-function IsPlayerDoneWithRound(color)
+function IsPlayerDoneWithRound(color, targetStatus)
     local playerStatus = PlayerData[color].status
+    if DeckMode.Base then
+        return playerStatus == PlayerStatus.Busted or playerStatus == PlayerStatus.Stayed
+    end
+    
+    -- Return true if a player has already that status
+    if playerStatus == targetStatus then return true end
+
+    -- In Vengeance and Fusion you may need to hit even if stayed
+    if PlayerHasCard(color, "special", "Flip3") then return false end
+    if PlayerHasCard(color, "special", "Flip4") then return false end
+    if PlayerHasCard(color, "special", "OneMore") then return false end
+
     return playerStatus == PlayerStatus.Busted or playerStatus == PlayerStatus.Stayed
+end
+
+function PlayerHasCard(color, tag, description)
+    local scriptZone = PlayerData[color].scriptZone
+    local scriptZoneObjects = scriptZone.getObjects()
+    
+    for _, object in pairs(scriptZoneObjects) do
+        if object.hasTag(tag) and object.getDescription() == description then
+            return true
+        end
+    end
+    
+    return false
 end
 
 function ResetPlayerCards(color)
@@ -738,11 +780,8 @@ end
 
 function AllPlayersDone()
     for color, data in pairs(PlayerData) do
-        if Player[color].seated and data.status == 0 then
-            return false
-        end
+        if not IsPlayerDoneWithRound(color) then return false end
     end
-
     return true
 end
 
@@ -868,9 +907,12 @@ function StartNewRoundWithTimer(countdown)
 end
 
 function CreateTokenForPlayer(color, bag)
-    local player3DData = PlayerData[color].positionData
+    local playerData = PlayerData[color]
+    local player3DData = playerData.positionData
     local token = bag.takeObject()
     if not token then return end
+
+    if playerData.token then playerData.token.destruct() end
 
     token.setPosition(player3DData.center + RotateOffset(0, 6, player3DData.angleY))
     token.setRotation(Vector(0, player3DData.handTransform.rotation.y + 180, 0))
@@ -881,6 +923,7 @@ function CreateTokenForPlayer(color, bag)
     else
         token.setGMNotes(color)
         token.addContextMenuItem(("Unset %s Status"):format(bagDescription), RemoveToken)
+        playerData.token = token
     end
 
     --local newColor = Color.fromString(color):lerp(Color.White, 0.3)

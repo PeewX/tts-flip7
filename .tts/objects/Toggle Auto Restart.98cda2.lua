@@ -52,7 +52,7 @@ function ToggleState()
     Enabled = not Enabled
 
     self.editButton({
-        index   = 0,
+        index   = 1,
         tooltip = ToggleStateData[Enabled].tooltip
     })
 

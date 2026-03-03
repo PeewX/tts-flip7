@@ -462,23 +462,14 @@ function CountItems()
     if WaitForNewRound then return end
 
     local anyDuplicate = false
-    local numberSum, plusSum, mult, countNumbercard = {}, {}, {}, {}
-    for i = 1, 8 do
-        --Score[i] = 0
-        numberSum[i] = 0
-        plusSum[i] = 0
-        mult[i] = 1
-        countNumbercard[i] = 0
-    end
-
-    for i, color in ipairs(PLAYER_COLORS) do
+    for _, color in pairs(PLAYER_COLORS) do
+        local score, numberSum, plusSum, numbercardCount, mult = 0, 0, 0, 0, 1
         local allObjects = GetAllPlayerObjects(color, true)
         local hasDuplicateNumber = false
         local seenNumbers = {}
         local hasSecondChance = nil
         local hasLuckyThirteen = false
         local hasTheZero = false
-        Score[color] = 0
 
         -- handle some special card flags before we iterate through all cards
         -- this is necessary to handle edge cases, e.g. player lost a special card during the round
@@ -504,7 +495,7 @@ function CountItems()
                     end
 
                     if seenNumberCount == 0 or (number == 13 and seenNumberCount == 1 and hasLuckyThirteen) then
-                        numberSum[i] = numberSum[i] + number
+                        numberSum = numberSum + number
 
                         if not seenNumbers[number] then
                             seenNumbers[number] = {}
@@ -535,14 +526,13 @@ function CountItems()
                     end
                 end
 
-                countNumbercard[i] = countNumbercard[i] + 1
+                numbercardCount = numbercardCount + 1
 
             elseif object.tagSet["plus"]  then
-                local plus = tonumber(object.description) or 0
-                plusSum[i] = plusSum[i] + plus
+                plusSum = plusSum + (tonumber(object.description) or 0)
 
             elseif object.tagSet["mult"] then
-                mult[i] = mult[i] * (tonumber(object.description) or 1)
+                mult = mult * (tonumber(object.description) or 1)
 
             elseif object.tagSet["special"] then
                 -- TODO: handle special cards
@@ -554,9 +544,9 @@ function CountItems()
             PlayerData[color].status = PlayerStatus.Active
         end
 
-        Score[color] = math.floor(numberSum[i] * mult[i] + plusSum[i])
+        score = math.floor(numberSum * mult + plusSum)
 
-        if countNumbercard[i] == 7 and not HasBeenPewd then
+        if numbercardCount == 7 and not HasBeenPewd then
             if IsBrutal then
                 if not IsBrutalModeEndScoreDecisionActive then
                     IsBrutalModeEndScoreDecisionActive = true
@@ -573,17 +563,17 @@ function CountItems()
                     end
                 end
             else
-                Score[color] = Score[color] + 15
+                score = score + 15
                 broadcastToAll(("%s has 7 cards and ends the round"):format(Player[color].steam_name or color))
                 StartNewRoundWithTimer()
             end
         end
 
-        if hasTheZero and countNumbercard[i] < 7 then Score[color] = 0 end
-        if hasDuplicateNumber and not hasSecondChance then Score[color] = 0 end
-        Score[color] = IsBrutal and Score[color] or math.max(0, Score[color])
+        if hasTheZero and numbercardCount < 7 then score = 0 end
+        if hasDuplicateNumber and not hasSecondChance then score = 0 end
+        Score[color] = IsBrutal and score or math.max(0, score)
 
-        PlayerData[color].cardCount = countNumbercard[i]
+        PlayerData[color].cardCount = numbercardCount
         PlayerData[color].scoreTile.editButton({index = 0, label = Score[color]})
     end
 
@@ -591,42 +581,6 @@ function CountItems()
 
     UpdateScoreBoard()
 end
-
---[[function GetScore(color)
-    local score = 0
-    local numberSum = 0
-    local plusSum = 0
-    local mult = 1
-    local countNumbercard = 0
-    local allObjects = GetAllPlayerObjects(color, true)
-    local hasTheZero = false
-
-    for _, object in pairs(allObjects) do
-        if object.is_face_down then goto continue end
-        if object.tagSet["zero"] then hasTheZero = true end
-
-        if object.tagSet["number"] then
-            numberSum = numberSum + (tonumber(object.description) or 0)
-            countNumbercard = countNumbercard + 1
-        end
-
-        if object.tagSet["plus"] then
-            plusSum = plusSum + (tonumber(object.description) or 0)
-        end
-
-        if object.tagSet["mult"] then
-            mult = mult * (tonumber(object.description) or 1)
-        end
-
-        ::continue::
-    end
-
-    score = math.floor(numberSum * mult + plusSum)
-    if countNumbercard == 7 and not IsBrutal then score = score + 15 end
-    if hasTheZero and countNumbercard < 7 then score = 0 end
-
-    return IsBrutal and score or math.max(0, score)
-end]]
 
 function RemoveToken(color, position, object)
     if object and object.type == "Tile" and object.hasTag("token") then
@@ -865,7 +819,7 @@ end
 
 function UpdateScoreBoard()
     local activePlayers = {}
-    for i, color in ipairs(PLAYER_COLORS) do
+    for _, color in pairs(PLAYER_COLORS) do
         if Player[color].seated then
             local roundScore = Score[color] or 0
             local gameScore = GetTotalScore(color)

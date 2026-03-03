@@ -9,6 +9,9 @@ DECK_INFO = {
     {Name = "Flip 7 Fusion Deck", ShortName = "Flip 7 Fusion ", Tooltip = "Base and Vengeance combined!", Brutal = true},
 }
 
+PLAYER_COLORS = {"White", "Yellow", "Red", "Purple", "Green", "Pink", "Blue", "Orange"}
+TOKEN_COLORS = {["White"] = {1, 1, 1}, ["Yellow"] = {1, 0.99, 0.6}, ["Red"] = {1, 0.78, 0.78}, ["Purple"] = {0.89, 0.72, 1}, ["Green"] = {0.71, 1, 0.71}, ["Pink"] = {1, 0.75, 0.93}, ["Blue"] = {0.71, 0.85, 1}, ["Orange"] = {1, 0.73, 0.59}}
+
 -- ENUMS
 PlayerStatus = {
     Active = 0,
@@ -28,12 +31,10 @@ DeckModes = {
 }
 
 -- Globals
-PLAYER_COLORS = {"White", "Yellow", "Red", "Purple", "Green", "Pink", "Blue", "Orange"}
-TOKEN_COLORS = {["White"] = {1, 1, 1}, ["Yellow"] = {1, 0.99, 0.6}, ["Red"] = {1, 0.78, 0.78}, ["Purple"] = {0.89, 0.72, 1}, ["Green"] = {0.71, 1, 0.71}, ["Pink"] = {1, 0.75, 0.93}, ["Blue"] = {0.71, 0.85, 1}, ["Orange"] = {1, 0.73, 0.59}}
 PlayerData = {}
 NextPlayerStartToken = nil
 WaitForNewRound = true
-IsBrutalModeEndScoreDecisionActive = false
+BrutalScoreDecision = {active = false, by = ""}
 GameOptions = {
     UseAutoRestart = true
 }
@@ -411,9 +412,10 @@ function NewRound()
 end
 
 function SetBrutalModeEndScore(object, color, alt)
+    if alt then return end
     if not IsBrutal then return end
-    if not IsBrutalModeEndScoreDecisionActive then return end
-    IsBrutalModeEndScoreDecisionActive = false
+    if not BrutalScoreDecision.active then return end
+    if not (BrutalScoreDecision.by == color) then return end
 
     local currentScore = object.getInputs()[1].value
     local modifierValue = object.hasTag(color) and 15 or -15
@@ -548,8 +550,9 @@ function CountItems()
 
         if numbercardCount == 7 and not HasBeenPewd then
             if IsBrutal then
-                if not IsBrutalModeEndScoreDecisionActive then
-                    IsBrutalModeEndScoreDecisionActive = true
+                if not BrutalScoreDecision.active then
+                    BrutalScoreDecision.active = true
+                    BrutalScoreDecision.by = color
                     for _, brutalPlayerColor in pairs(PLAYER_COLORS) do
                         local buttonLabel = brutalPlayerColor == color and "+15" or "-15"
                         local buttonColor = brutalPlayerColor == color and {0.6, 0.8, 0.6} or {0.8, 0.6, 0.6}

@@ -426,6 +426,38 @@ function SetBrutalModeEndScore(object, color, alt)
     UpdateScoreBoard()
 end
 
+function UnbundleObjects(objects)
+    local unbundledObjects = {}
+
+    for _, object in pairs(objects) do
+        if object.type == "Card" then
+            table.insert(unbundledObjects, {src = object, is_face_down = object.is_face_down, tagSet = GenTagSet(object.getTags(), true), description = object.getDescription()})
+        elseif object.type == "Deck" then
+            for _, element in pairs(object.getObjects() or {}) do
+                -- In a deck you don't actually get an object, just metadata
+                table.insert(unbundledObjects, {src = object, is_face_down = object.is_face_down, tagSet = GenTagSet(element.tags, true), description = element.description})
+            end
+        end
+    end
+
+    return unbundledObjects
+end
+
+function GetAllPlayerObjects(color, unbundled)
+    local playerObjects = {}
+    local scriptZone = PlayerData[color].scriptZone
+
+    for _, object in pairs(scriptZone.getObjects() or {}) do
+        table.insert(playerObjects, object)
+    end
+
+    for _, object in pairs(Player[color].getHandObjects() or {}) do
+        table.insert(playerObjects, object)
+    end
+
+    return unbundled and UnbundleObjects(playerObjects) or playerObjects
+end
+
 function CountItems()
     if WaitForNewRound then return end
 
@@ -440,30 +472,30 @@ function CountItems()
     end
 
     for i, color in ipairs(PLAYER_COLORS) do
-        local scriptZone = PlayerData[color].scriptZone
-        local scriptZoneObjects = scriptZone.getObjects() -- get objects already in the zone
+        local allObjects = GetAllPlayerObjects(color, true)
         local seenNumbers = {}
         local hasSecondChance = nil
         local hasLuckyThirteen = false
 
         -- handle some special card flags before we iterate through all cards
         -- this is necessary to handle edge cases, e.g. player lost a special card during the round
-        for _, scriptZoneObject in pairs(scriptZoneObjects) do
+        for _, object in pairs(allObjects) do
             -- second chance
-            if scriptZoneObject.hasTag("special") and scriptZoneObject.getDescription() == SpecialCards.SecondChance then
-                hasSecondChance = scriptZoneObject
+            if object.tagSet["special"] and object.description == SpecialCards.SecondChance then
+                hasSecondChance = object.src
             end
 
             -- lucky 13
-            if scriptZoneObject.hasTag("thirteen") then
+            if object.tagSet["thirteen"] then
                 hasLuckyThirteen = true
             end
         end
 
-        for _, scriptZoneObject in pairs(scriptZoneObjects) do
-            if scriptZoneObject.hasTag("number") and scriptZoneObject.is_face_down == false then
-                local description = scriptZoneObject.getDescription()
-                local number = tonumber(description)
+        for _, object in pairs(allObjects) do
+            if object.is_face_down then goto continue end
+
+            if object.tagSet["number"] then
+                local number = tonumber(object.description)
 
                 if number then
                     local seenNumberCount = 0
@@ -481,8 +513,8 @@ function CountItems()
 
                         seenNumbers[number].count = seenNumberCount + 1
                         -- save the seen object, except for the lucky 13
-                        if not scriptZoneObject.hasTag("thirteen") then
-                            seenNumbers[number].obj = scriptZoneObject
+                        if not object.tagSet["thirteen"] then
+                            seenNumbers[number].obj = object.src
                         end
                     else
                         hasDuplicateNumber = true
@@ -494,7 +526,7 @@ function CountItems()
                             HasBeenPewd = true
 
                             -- visual notifications
-                            scriptZoneObject.highlightOn("Red", BUSTED_CARD_HIGHLIGHT_DURATION)
+                            object.src.highlightOn("Red", BUSTED_CARD_HIGHLIGHT_DURATION)
                             seenNumberTableData.obj.highlightOn("Red", BUSTED_CARD_HIGHLIGHT_DURATION)
                             if hasSecondChance then
                                if player.seated then player.pingTable(hasSecondChance.getPosition()) end
@@ -506,18 +538,17 @@ function CountItems()
 
                 countNumbercard[i] = countNumbercard[i] + 1
 
-            elseif scriptZoneObject.hasTag("plus") and scriptZoneObject.is_face_down == false then
-                local description = scriptZoneObject.getDescription()
-                local plus = tonumber(description) or 0
+            elseif object.tagSet["plus"]  then
+                local plus = tonumber(object.description) or 0
                 plusSum[i] = plusSum[i] + plus
 
-            elseif scriptZoneObject.hasTag("mult") and scriptZoneObject.is_face_down == false then
-                local description = scriptZoneObject.getDescription()
-                mult[i] = mult[i] * (tonumber(description) or 1)
+            elseif object.tagSet["mult"] then
+                mult[i] = mult[i] * (tonumber(object.description) or 1)
 
-            elseif scriptZoneObject.hasTag("special") and scriptZoneObject.is_face_down == false then
+            elseif object.tagSet["special"] then
                 -- TODO: handle special cards
             end
+            ::continue::
         end
 
         if not hasDuplicateNumber and PlayerData[color].status == PlayerStatus.ActionRequired then
@@ -549,10 +580,11 @@ function CountItems()
             end
         end
 
-        -- only the special vengeance mode 0 card has the tag 'zero'
-        for _, scriptZoneObject in ipairs(scriptZoneObjects) do
-            if scriptZoneObject.hasTag("zero") and countNumbercard[i] < 7 then
-                Score[i] = 0
+        if DeckMode ~= DeckModes.Base then
+            for _, object in pairs(allObjects) do
+                if object.tagSet["zero"] and countNumbercard[i] < 7 then
+                    Score[i] = 0
+                end
             end
         end
 
@@ -766,15 +798,13 @@ function IsPlayerDoneWithRound(color)
 end
 
 function PlayerHasCard(color, tag, description)
-    local scriptZone = PlayerData[color].scriptZone
-    local scriptZoneObjects = scriptZone.getObjects()
-    
-    for _, object in pairs(scriptZoneObjects) do
-        if object.hasTag(tag) and object.getDescription() == description then
+    local allObjects = GetAllPlayerObjects(color, true)
+    for _, object in pairs(allObjects) do
+        if object.tagSet[tag] and object.description == description then
             return true
         end
     end
-    
+
     return false
 end
 

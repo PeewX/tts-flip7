@@ -84,16 +84,16 @@ function onObjectDrop(color, object)
 
     if DeckMode == DeckModes.Base then return end
 
-    if object.type == "Card" and object.hasTag("special") then
+    if object.type == "Card" and object.hasTag("action") then
         local tagSet = GenTagSet(object.getTags(), true)
         local description = object.getDescription()
-        if tagSet["special"] and (description == "Flip3" or description == "Flip4" or description == "OneMore") then
+        if tagSet["action"] and (description == "Flip3" or description == "Flip4" or description == "OneMore") then
             local targetColor = false
             for _, v in pairs(object.getZones()) do if v.getGMNotes() ~= "" and v.getGMNotes() ~= color then targetColor = v.getGMNotes() end end
             if targetColor and Color.fromString(targetColor) then
                 local playerData = PlayerData[targetColor]
                 if playerData.status == PlayerStatus.Stayed and IsObject(playerData.token) then
-                    playerData.tokenReset = object
+                    playerData.tokenReset = true
                     playerData.token.setColorTint(Color(TOKEN_COLORS[targetColor]):lerp(Color.Black, 0.8))
                 end
             end
@@ -104,11 +104,12 @@ end
 function onObjectLeaveZone(zone, object)
     if DeckMode == DeckModes.Base then return end
     if not IsObject(object) then return end
-    if object.type ~= "Card" or not object.hasTag("special") then return end
+    if object.type ~= "Card" or not object.hasTag("action") then return end
 
     local playerColor = zone.getGMNotes()
-    if playerColor and Color.fromString(playerColor) then
-        if PlayerData[playerColor].tokenReset == object then
+    if playerColor and Color.fromString(playerColor) and PlayerData[playerColor].tokenReset then
+        if not PlayerHasCard(playerColor, "action", {"Flip3", "Flip4", "OneMore"}) then
+            PlayerData[playerColor].tokenReset = false
             if IsObject(PlayerData[playerColor].token) then
                 PlayerData[playerColor].token.setColorTint(TOKEN_COLORS[playerColor])
             end
@@ -751,18 +752,23 @@ function IsPlayerDoneWithRound(color)
     if playerStatus == PlayerStatus.Busted then return true end
 
     -- In Vengeance and Fusion you may need to hit even if stayed
-    if PlayerHasCard(color, "special", "Flip3") then return false end
-    if PlayerHasCard(color, "special", "Flip4") then return false end
-    if PlayerHasCard(color, "special", "OneMore") then return false end
+    if PlayerHasCard(color, "action", {"Flip3", "Flip4", "OneMore"}) then return false end
 
     return playerStatus == PlayerStatus.Busted or playerStatus == PlayerStatus.Stayed
 end
 
-function PlayerHasCard(color, tag, description)
+function PlayerHasCard(color, tag, descriptions)
     local allObjects = GetAllPlayerObjects(color, true)
     for _, object in pairs(allObjects) do
-        if object.tagSet[tag] and object.description == description then
-            return true
+        if object.tagSet[tag] then
+            if descriptions then
+                for _, description in pairs(descriptions) do
+                    if object.description == description then
+                        return true
+                    end
+            else
+                return true
+            end
         end
     end
 

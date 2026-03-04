@@ -768,6 +768,7 @@ function PlayerHasCard(color, tag, descriptions)
                     if object.description == description then
                         return true
                     end
+                end
             else
                 return true
             end

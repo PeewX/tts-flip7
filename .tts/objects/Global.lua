@@ -412,7 +412,10 @@ function NewRound()
     end
 
     -- hide brutal mode extra buttons
-    if IsBrutal then HitBtn.call("ResetBrutalButton", PlayerData) end
+    if IsBrutal then
+        HitBtn.call("ResetBrutalButton", PlayerData)
+        BrutalScoreDecision.active = false
+    end
 
     WaitForNewRound = false
     ShiftStartingPlayer()
@@ -607,7 +610,7 @@ function Bust(object, color, alt)
     ActionBlocker = {active = false, by = "", src = nil}
 
     for _, v in pairs(PlayerData[color].scriptZone.getObjects()) do
-        if v.type == "Deck" or v.type == "Card" then
+        if (v.type == "Deck" or v.type == "Card") and not v.is_face_down then
             v.flip()
         end
     end

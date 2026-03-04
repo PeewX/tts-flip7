@@ -616,6 +616,7 @@ function Bust(object, color, alt)
     playerData.status = PlayerStatus.Busted
 
     CreateTokenForPlayer(color, BustedBag)
+    ResetPlayerActionCards(color)
 end
 
 function Stay(object, color, alt)
@@ -631,6 +632,7 @@ function Stay(object, color, alt)
     playerData.status = PlayerStatus.Stayed
 
     CreateTokenForPlayer(color, StayBag)
+    ResetPlayerActionCards(color)
 end
 
 local lastHit = os.time()
@@ -776,10 +778,19 @@ function PlayerHasCard(color, tag, descriptions)
 end
 
 function ResetPlayerCards(color)
-    for _, v in pairs(PlayerData[color].scriptZone.getObjects()) do
-        if v.type == "Deck" or v.type == "Card" then
-            v.setPosition({2.06, 2.3, 1.07})
-            v.setRotation({0, 180, 0})
+    local allObjects = GetAllPlayerObjects(color, true)
+    for _, object in pairs(allObjects) do
+        object.src.setPosition({2.06, 2.3, 1.07})
+        object.src.setRotation({0, 180, 0})
+    end
+end
+
+function ResetPlayerActionCards(color)
+    local allObjects = GetAllPlayerObjects(color, true)
+    for _, object in pairs(allObjects) do
+        if object.tagSet["action"] then
+            object.src.setPosition({2.06, 2.3, 1.07})
+            object.src.setRotation({0, 180, 0})
         end
     end
 end

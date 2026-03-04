@@ -604,7 +604,7 @@ end
 function Bust(object, color, alt)
     if alt then return end
     if WaitForNewRound then return end
-    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard() end
+    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
 
     ActionBlocker = {active = false, by = "", src = nil}
@@ -619,15 +619,16 @@ function Bust(object, color, alt)
     playerData.status = PlayerStatus.Busted
 
     CreateTokenForPlayer(color, BustedBag)
-    ResetPlayerActionCards(color)
+    ResetPlayerCards(color, function(obj) return obj.tagSet["action"] end, true)
 end
 
 function Stay(object, color, alt)
     if alt then return end
     if WaitForNewRound then return end
     if HasBeenPewd then return end
-    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard() end
+    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
+    if PlayerHasCard(color, "zero") then return broadcastToColor("You've gotten THE ZERO!", color) end
 
     ActionBlocker = {active = false, by = "", src = nil}
 
@@ -635,7 +636,7 @@ function Stay(object, color, alt)
     playerData.status = PlayerStatus.Stayed
 
     CreateTokenForPlayer(color, StayBag)
-    ResetPlayerActionCards(color)
+    ResetPlayerCards(color, function(obj) return obj.tagSet["action"] end, true)
 end
 
 local lastHit = os.time()
@@ -643,8 +644,8 @@ function Hit(object, color, alt)
     if alt then return end
     if WaitForNewRound then return end
     if HasBeenPewd then return end
-    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard() end
-    if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end   
+    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard(color) end
+    if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
 
     if os.time() - lastHit < 0.5 then return end
     lastHit = os.time()
@@ -656,10 +657,10 @@ function Hit(object, color, alt)
     if drawcard == nil then return end
 
     if drawcard.hasTag("seven") then
-        ResetPlayerCards(color)
+        ResetPlayerCards(color, function(obj) return not obj.tagSet["action"] end)
     end
 
-    ActionBlocker = {active = false, by = "", src = nil}
+    --ActionBlocker = {active = false, by = "", src = nil}
     if drawcard.hasTag("action") then
         ActionBlocker = {active = true, by = color, src = drawcard}
         playerData.status = PlayerStatus.ActionRequired
@@ -683,7 +684,7 @@ function Hit(object, color, alt)
             -- It seems the topmost card is always the first index..
             targetPosition = cards[1].hit_object.positionToWorld(Vector(-1, 0.1, 0))
         end
-        
+
         drawcard.setPositionSmooth(targetPosition, false, false)
         targetSnapPoints = nil -- we don't need further positioning
     end
@@ -733,10 +734,9 @@ function Hit(object, color, alt)
     end
 end
 
-function HighlightActionCard()
+function HighlightActionCard(toColor)
     if ActionBlocker.active and IsObject(ActionBlocker.src) then
-        local player = Player[ActionBlocker.by]
-        if player.seated then player.pingTable(ActionBlocker.src.getPosition()) end
+        if Player[toColor].seated then Player[toColor].pingTable(ActionBlocker.src.getPosition()) end
         ActionBlocker.src.highlightOn("Red", 3)
     end
 end
@@ -781,19 +781,12 @@ function PlayerHasCard(color, tag, descriptions)
     return false
 end
 
-function ResetPlayerCards(color)
+function ResetPlayerCards(color, filterFunc, smooth)
     local allObjects = GetAllPlayerObjects(color, true)
     for _, object in pairs(allObjects) do
-        object.src.setPosition({2.06, 2.3, 1.07})
-        object.src.setRotation({0, 180, 0})
-    end
-end
-
-function ResetPlayerActionCards(color)
-    local allObjects = GetAllPlayerObjects(color, true)
-    for _, object in pairs(allObjects) do
-        if object.tagSet["action"] then
-            object.src.setPosition({2.06, 2.3, 1.07})
+        if not filterFunc or (filterFunc and filterFunc(object)) then
+            local posFunc = smooth and "setPositionSmooth" or "setPosition"
+            object.src[posFunc]({2.06, 2.3, 1.07}, false, true)
             object.src.setRotation({0, 180, 0})
         end
     end

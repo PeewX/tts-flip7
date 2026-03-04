@@ -1,6 +1,7 @@
 -- CONSTS
 local MSG_BUSTED = "%s got busted!"
 local MSG_2ND_CHANCE = "Time for %s to use their second chance!"
+local MSG_WAIT_ROUND = "Please wait until a new round has started"
 local BUSTED_CARD_HIGHLIGHT_DURATION = 3
 
 DECK_INFO = {
@@ -35,6 +36,7 @@ PlayerData = {}
 NextPlayerStartToken = nil
 WaitForNewRound = true
 BrutalScoreDecision = {active = false, by = ""}
+ActionBlocker = {active = false, by = "", src = nil}
 GameOptions = {
     UseAutoRestart = true
 }
@@ -76,6 +78,10 @@ function IsSnapPointOccupied(snapPoint)
 end
 
 function onObjectDrop(color, object)
+    if ActionBlocker.active and IsObject(ActionBlocker.src) and ActionBlocker.src == object then
+        ActionBlocker = {active = false, by = "", src = nil}
+    end
+
     if DeckMode == DeckModes.Base then return end
 
     if object.type == "Card" and object.hasTag("special") then
@@ -535,14 +541,11 @@ function CountItems()
 
             elseif object.tagSet["mult"] then
                 mult = mult * (tonumber(object.description) or 1)
-
-            elseif object.tagSet["special"] then
-                -- TODO: handle special cards
             end
             ::continue::
         end
 
-        if not hasDuplicateNumber and PlayerData[color].status == PlayerStatus.ActionRequired then
+        if not hasDuplicateNumber and not ActionBlocker.active and PlayerData[color].status == PlayerStatus.ActionRequired then
             PlayerData[color].status = PlayerStatus.Active
         end
 
@@ -595,10 +598,12 @@ function RemoveToken(color, position, object)
 end
 
 function Bust(object, color, alt)
-    if IsPlayerDoneWithRound(color) then
-        broadcastToColor("Please wait until a new round has started", color)
-        return false
-    end
+    if alt then return end
+    if WaitForNewRound then return end
+    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard() end
+    if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
+
+    ActionBlocker = {active = false, by = "", src = nil}
 
     for _, v in pairs(PlayerData[color].scriptZone.getObjects()) do
         if v.type == "Deck" or v.type == "Card" then
@@ -613,12 +618,13 @@ function Bust(object, color, alt)
 end
 
 function Stay(object, color, alt)
-    if alt then return false end
-    if HasBeenPewd then return false end
-    if IsPlayerDoneWithRound(color) then
-        broadcastToColor("Please wait until a new round has started", color)
-        return false
-    end
+    if alt then return end
+    if WaitForNewRound then return end
+    if HasBeenPewd then return end
+    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard() end
+    if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
+
+    ActionBlocker = {active = false, by = "", src = nil}
 
     local playerData = PlayerData[color]
     playerData.status = PlayerStatus.Stayed
@@ -628,29 +634,29 @@ end
 
 local lastHit = os.time()
 function Hit(object, color, alt)
-    if alt then return false end
-    if HasBeenPewd then return false end
-    if IsPlayerDoneWithRound(color) then
-        broadcastToColor("Please wait until a new round has started", color)
-        return false
-    end
+    if alt then return end
     if WaitForNewRound then return end
-
-    local playerData = PlayerData[color]
-
-    if NextPlayerStartToken then
-        NextPlayerStartToken.destruct()
-        NextPlayerStartToken = nil
-    end
+    if HasBeenPewd then return end
+    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard() end
+    if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end   
 
     if os.time() - lastHit < 0.5 then return end
     lastHit = os.time()
 
+    if IsObject(NextPlayerStartToken) then NextPlayerStartToken.destruct() end
+
+    local playerData = PlayerData[color]
     local drawcard = Scan()
     if drawcard == nil then return end
 
     if drawcard.hasTag("seven") then
         ResetPlayerCards(color)
+    end
+
+    ActionBlocker = {active = false, by = "", src = nil}
+    if drawcard.hasTag("action") then
+        ActionBlocker = {active = true, by = color, src = drawcard}
+        playerData.status = PlayerStatus.ActionRequired
     end
 
     local targetSnapPoints
@@ -718,6 +724,14 @@ function Hit(object, color, alt)
                 v.hit_object.shuffle()
             end
         end
+    end
+end
+
+function HighlightActionCard()
+    if ActionBlocker.active and IsObject(ActionBlocker.src) then
+        local player = Player[ActionBlocker.by]
+        if player.seated then player.pingTable(ActionBlocker.src.getPosition()) end
+        ActionBlocker.src.highlightOn("Red", 3)
     end
 end
 

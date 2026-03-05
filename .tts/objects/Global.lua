@@ -128,7 +128,7 @@ function onLoad()
 
     -- Init deck with base game
     DeckMode = DeckModes.Base
-    Deck2 = Scan2()
+    Deck2 = GetDrawPile()
     SetModeSelection()
 
     local hotKeyFunctions = {"Hit", "Stay", "Bust"}
@@ -269,7 +269,7 @@ function ResetGame(_, color, _)
     end
 
     -- put all cards back
-    local drawDeck = Scan2()
+    local drawDeck = GetDrawPile()
     for _, v in pairs(getObjects()) do
         if v ~= drawDeck and (v.type == "Deck" or v.type == "Card") then
             v.setPosition({-1.60, 2.3, 1.13})
@@ -392,7 +392,7 @@ end
 
 function NewRound()
     local posCount = 0.1
-    Deck2 = Scan2()
+    Deck2 = GetDrawPile()
 
     for _, color in pairs(PLAYER_COLORS) do
         local playerData = PlayerData[color]
@@ -664,7 +664,7 @@ function Hit(object, color, alt)
     if IsObject(NextPlayerStartToken) then NextPlayerStartToken.destruct() end
 
     local playerData = PlayerData[color]
-    local drawcard = Scan()
+    local drawcard = GetDrawPile(true)
     if drawcard == nil then return end
 
     if drawcard.hasTag("seven") then
@@ -688,7 +688,7 @@ function Hit(object, color, alt)
     if drawcard.hasTag("chance") then
         local point = playerData.snapPoints.chance[1]
         local cards = UsePhysicsCast({origin = point.position, direction = {0, 1, 0}})
-        drawcard.setRotation(Vector(0, playerData.positionData.handTransform.rotation.y + 180, 0))
+        drawcard.setRotationSmooth(Vector(0, playerData.positionData.handTransform.rotation.y + 180, 0), false, false)
         local targetPosition = point.position
 
         if #cards > 1 then  -- we always get the board
@@ -705,7 +705,7 @@ function Hit(object, color, alt)
         for _, point in ipairs(targetSnapPoints) do
             if not IsSnapPointOccupied(point) then
                 drawcard.setPositionSmooth(point.position, false, false)
-                drawcard.setRotation(Vector(0, playerData.positionData.handTransform.rotation.y + 180, 0))
+                drawcard.setRotationSmooth(Vector(0, playerData.positionData.handTransform.rotation.y + 180, 0), false, false)
                 foundSpaceForCard = true
                 break
             end
@@ -810,29 +810,12 @@ function AllPlayersDone()
     return true
 end
 
-function Scan()
-    local deckscan = UsePhysicsCast({origin = {-2, 2, 1}})
-    IsEmpty = true
-
-    for _, v in ipairs(deckscan) do
-        if v.hit_object.type == "Deck" then
-            IsEmpty = false
-
-            return v.hit_object.takeObject()
-        elseif v.hit_object.type == "Card" then
-            IsEmpty = false
-
-            return v.hit_object
-        end
-    end
-end
-
-function Scan2()
+function GetDrawPile(takeCard)
     local deckscan = UsePhysicsCast({origin = {-2, 2, 1}})
 
     for _, v in pairs(deckscan) do
         if v.hit_object.type == "Deck" or v.hit_object.type == "Card" then
-            return v.hit_object
+            return takeCard and (v.hit_object.type == "Deck" and v.hit_object.takeObject() or v.hit_object) or v.hit_object
         end
     end
 end

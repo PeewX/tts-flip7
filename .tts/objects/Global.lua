@@ -661,7 +661,7 @@ function Hit(object, color, alt)
     end
 
     --ActionBlocker = {active = false, by = "", src = nil}
-    if drawcard.hasTag("action") or (drawcard.hasTag("modifier" and (tonumber(drawcard.getDescription()) or 1) < 1) then
+    if drawcard.hasTag("action") or (drawcard.hasTag("modifier") and (tonumber(drawcard.getDescription()) or 1) < 1) then
         ActionBlocker = {active = true, by = color, src = drawcard}
         playerData.status = PlayerStatus.ActionRequired
     end

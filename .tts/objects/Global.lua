@@ -968,40 +968,41 @@ end
 function CalcCardStats()
     if not IsObject(Deck2) then return {} end
     local deck = UnbundleObjects({Deck2})
-    local cardCounts, total, stats = {}, 0, {}
+    local cardStats, total = {}, 0
 
     for _, v in pairs(deck) do
-        local identifier = nil
+        local type, identifier = nil, nil
         local desc = tonumber(v.description)
 
-        if (v.tagSet["zero"] or v.tagSet["seven"] or v.tagSet["thirteen"]) and desc then
-            identifier = ("%s:%d"):format("Special", desc)
+        if (v.tagSet["zero"] or v.tagSet["seven"] or v.tagSet["thirteen"] or v.tagSet["action"] or v.tagSet["chance"]) then
+            type, identifier = "Special", tostring(v.description)
         elseif v.tagSet["number"] and desc then
-            identifier = ("%s:%d"):format("Number", tostring(v.description))
-        elseif v.tagSet["modifier"] and v.tagSet["plus"] and desc then
-            identifier = ("%s:%s%d"):format("Modifier", desc > 0 and "+" or "", desc)
-        elseif v.tagSet["modifier"] and v.tagSet["mult"] and desc then
-            identifier = ("%s:x%.1f"):format("Modifier", desc)
-        elseif v.tagSet["action"] then
-            identifier = ("%s:%s"):format("Action", tostring(v.description))
-        elseif v.tagSet["chance"] then
-            identifier = ("%s:%s"):format("Special", tostring(v.description))
+            type, identifier = "Number", tostring(desc)
+        elseif v.tagSet["modifier"] and desc then
+            type, identifier = "Modifier", v.tagSet["mult"] and ("x%.1f"):format(desc) or tostring(desc)
         end
 
-        if identifier then
-            cardCounts[identifier] = (cardCounts[identifier] or 0) + 1
+        if type and identifier then
+            if not cardStats[type] then cardStats[type] = {} end
             total = total + 1
+            cardStats[type][identifier] = (cardStats[type][identifier] or 0) + 1
         end
     end
 
-    for card, count in pairs(cardCounts) do
-        stats[card] = {count, math.floor((count/total)*(10^3))/(10^1)}
+    for type, cards in pairs(cardStats) do
+        local typeCount, typeChance = 0, 0
+        for identifier, count in pairs (cards) do
+            local chance = math.floor((count/total)*(10^3))/(10^1)
+            typeCount, typeChance = typeCount + count, typeChance + chance
+            cardStats[type][identifier] = {count, chance}
+        end
+        cardStats[type]["_total"] = {typeCount, typeChance}
     end
 
     print(total)
-    print(JSON.encode_pretty(stats))
+    print(JSON.encode_pretty(cardStats))
 
-    return stats
+    return cardStats
 end
 
 ------ Utils

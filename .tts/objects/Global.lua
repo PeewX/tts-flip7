@@ -138,6 +138,9 @@ function onLoad()
 
     -- Running CountItems two times a second
     Wait.time(CountItems, 0.5, -1)
+
+    -- Debug logs
+    --Wait.time(PrintDebugLogs, 10, -1)
 end
 
 function InitPlayerData()
@@ -426,14 +429,22 @@ function SetBrutalModeEndScore(object, color, alt)
     if not IsBrutal then return end
     if not BrutalScoreDecision.active then return end
     if not (BrutalScoreDecision.by == color) then return end
+    local targetPlayerColor = GetPlayerColorFromTags(GenTagSet(object.getTags(), false))
+    if not Player[targetPlayerColor].seated then return end
 
     local currentScore = object.getInputs()[1].value
-    local modifierValue = object.hasTag(color) and 15 or -15
+    local modifierValue = targetPlayerColor == color and 15 or -15
 
     object.editInput({index = 0, value = currentScore + modifierValue})
     HitBtn.call("ResetBrutalButton", PlayerData)
 
-    broadcastToAll(("%s has made their decision and ends the round"):format(Player[color].steam_name or color))
+    --broadcastToAll(("%s has made their decision and ends the round"):format(Player[color].steam_name or color))
+    if targetPlayerColor == color then
+        broadcastToAll(("%s takes the 15 points for themselves"):format(Player[color].steam_name or color))
+    else
+        broadcastToAll(("%s removed 15 points from %s"):format(Player[color].steam_name or color, Player[targetPlayerColor].steam_name or targetPlayerColor))
+    end
+
     StartNewRoundWithTimer()
     UpdateScoreBoard()
 end
@@ -964,9 +975,27 @@ function HasTag(tags, tag)
     return false
 end
 
+function GetPlayerColorFromTags(tags)
+    for _, color in pairs(PLAYER_COLORS) do
+        if tags[color] ~= nil then return color end
+    end
+end
+
 ------ Utils
 function table.size(T)
     local count = 0
     for _ in pairs(T) do count = count + 1 end
     return count
+end
+
+function PrintDebugLogs()
+    local flags = {
+        ["HasBeenPewd"]=HasBeenPewd,
+        --["NextPlayerStartToken"]=NextPlayerStartToken,
+        ["WaitForNewRound"]=WaitForNewRound,
+        ["BrutalScoreDecision"]=BrutalScoreDecision,
+        ["ActionBlocker"]=ActionBlocker,
+        ["GameOptions"]=GameOptions
+    }
+    printToColor(JSON.encode_pretty(flags), "White")
 end

@@ -998,7 +998,6 @@ function ActionBlocker.reset()
 end
 
 function ActionBlocker.add(color, object)
-    print("Added Action Card for ", color)
     local new = {by = color, src = object}
     table.insert(ActionBlocker.cards, new)
 end
@@ -1019,6 +1018,7 @@ function ActionBlocker.isPermitted(color)
 
     local card = ActionBlocker.get()
     if card.by == color then return true end
+    if PlayerData[color].status == PlayerStatus.ActionRequired then return true end
     return false
 end
 
@@ -1037,7 +1037,6 @@ end
 function ActionBlocker.update(object, color)
     for _, card in pairs(ActionBlocker.cards) do
         if card.src == object then
-            print("Update action card from ", card.by, " to ", color)
             card.by = color
         end
     end
@@ -1046,18 +1045,16 @@ end
 function ActionBlocker.discard(object)
     for i, card in ipairs(ActionBlocker.cards) do
         if card.src == object then
-            print("Remove an action card from ", card.by)
             return table.remove(ActionBlocker.cards, i)
         end
     end
 end
 
 function ActionBlocker.discardFor(color)
-    print("Remove all action cards for ", color)
     for i = #ActionBlocker.cards, 1, -1 do
         local card = ActionBlocker.cards[i]
         if card.by == color then
-            return table.remove(ActionBlocker.cards, i)
+            table.remove(ActionBlocker.cards, i)
         end
     end
 end

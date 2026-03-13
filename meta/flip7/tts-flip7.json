@@ -2629,7 +2629,7 @@
         "scaleY": 1.65,
         "scaleZ": 1.65
       },
-      "Nickname": "Toggle Auto Restart",
+      "Nickname": "ConfigPanel",
       "Description": "",
       "GMNotes": "",
       "AltLookAngle": {

@@ -36,7 +36,6 @@ PlayerData = {}
 NextPlayerStartToken = nil
 WaitForNewRound = true
 BrutalScoreDecision = {active = false, by = ""}
-ActionBlocker = {active = false, by = "", src = nil}
 GameOptions = {
     UseAutoRestart = true
 }
@@ -78,8 +77,20 @@ function IsSnapPointOccupied(snapPoint)
 end
 
 function onObjectDrop(color, object)
-    if ActionBlocker.active and IsObject(ActionBlocker.src) and ActionBlocker.src == object then
-        ActionBlocker = {active = false, by = "", src = nil}
+    if ActionBlocker.isBlocked() and ActionBlocker.isAny(object) then
+        local zones = object.getZones()
+        if #zones > 0 then
+            local droppedZone = zones[1].getGMNotes()
+            local playerData = PlayerData[droppedZone]
+            if ActionBlocker.get().by ~= droppedZone then
+                if droppedZone == "Discard" or object:hasTag("modifier") then
+                    ActionBlocker.discard(object)
+                elseif playerData and playerData.status ~= PlayerStatus.Busted then
+                    playerData.status = PlayerStatus.ActionRequired
+                    ActionBlocker.update(object, droppedZone)
+                end
+            end
+        end
     end
 
     if DeckMode == DeckModes.Base then return end
@@ -89,8 +100,8 @@ function onObjectDrop(color, object)
         local description = object.getDescription()
         if tagSet["action"] and (description == "Flip3" or description == "Flip4" or description == "OneMore") then
             local targetColor = false
-            for _, v in pairs(object.getZones()) do if v.getGMNotes() ~= "" and v.getGMNotes() ~= color then targetColor = v.getGMNotes() end end
-            if targetColor and Color.fromString(targetColor) then
+            for _, v in pairs(object.getZones()) do if PlayerData[v.getGMNotes()] and v.getGMNotes() ~= color then targetColor = v.getGMNotes() end end
+            if targetColor then
                 local playerData = PlayerData[targetColor]
                 if playerData.status == PlayerStatus.Stayed and IsObject(playerData.token) then
                     playerData.tokenReset = true
@@ -107,7 +118,7 @@ function onObjectLeaveZone(zone, object)
     if object.type ~= "Card" or not object.hasTag("action") then return end
 
     local playerColor = zone.getGMNotes()
-    if playerColor and Color.fromString(playerColor) and PlayerData[playerColor].tokenReset then
+    if PlayerData[playerColor] and Color.fromString(playerColor) and PlayerData[playerColor].tokenReset then
         if not PlayerHasCard(playerColor, "action", {"Flip3", "Flip4", "OneMore"}) then
             PlayerData[playerColor].tokenReset = false
             if IsObject(PlayerData[playerColor].token) then
@@ -120,6 +131,7 @@ end
 function onLoad()
     InitPlayerData()
     InitButtonsAndObjects()
+    ActionBlocker.reset()
 
     Score = {} -- could be moved to PlayerData?
     IsBrutal = false -- only available in vengeance mode
@@ -212,7 +224,7 @@ function InitPlayerData()
 
     -- save scriptingZone to PlayerData
     for _, v in pairs(getObjects()) do
-        if v.type == "Scripting" then
+        if v.type == "Scripting" and PlayerData[v.getGMNotes()] then
             PlayerData[v.getGMNotes()].scriptZone = v
         end
     end
@@ -422,6 +434,7 @@ function NewRound()
 
     WaitForNewRound = false
     ShiftStartingPlayer()
+    ActionBlocker.reset()
 end
 
 function SetBrutalModeEndScore(object, color, alt)
@@ -560,7 +573,7 @@ function CountItems()
             ::continue::
         end
 
-        if not hasDuplicateNumber and not ActionBlocker.active and PlayerData[color].status == PlayerStatus.ActionRequired then
+        if not hasDuplicateNumber and not ActionBlocker.isBlocked(color) and PlayerData[color].status == PlayerStatus.ActionRequired then
             PlayerData[color].status = PlayerStatus.Active
         end
 
@@ -615,10 +628,10 @@ end
 function Bust(object, color, alt)
     if alt then return end
     if WaitForNewRound then return end
-    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard(color) end
+    if not ActionBlocker.isPermitted(color) then return ActionBlocker.HighlightCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
 
-    ActionBlocker = {active = false, by = "", src = nil}
+    ActionBlocker.discardFor(color)
 
     for _, v in pairs(PlayerData[color].scriptZone.getObjects()) do
         if (v.type == "Deck" or v.type == "Card") and not v.is_face_down then
@@ -637,11 +650,11 @@ function Stay(object, color, alt)
     if alt then return end
     if WaitForNewRound then return end
     if HasBeenPewd then return end
-    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard(color) end
+    if not ActionBlocker.isPermitted(color) then return ActionBlocker.HighlightCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
     if PlayerHasCard(color, "zero") then return broadcastToColor("You've gotten THE ZERO!", color) end
 
-    ActionBlocker = {active = false, by = "", src = nil}
+    ActionBlocker.discardFor(color)
 
     local playerData = PlayerData[color]
     playerData.status = PlayerStatus.Stayed
@@ -655,7 +668,7 @@ function Hit(object, color, alt)
     if alt then return end
     if WaitForNewRound then return end
     if HasBeenPewd then return end
-    if ActionBlocker.active and ActionBlocker.by ~= color then return HighlightActionCard(color) end
+    if not ActionBlocker.isPermitted(color) then return ActionBlocker.HighlightCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
 
     if os.time() - lastHit < 0.5 then return end
@@ -671,9 +684,8 @@ function Hit(object, color, alt)
         ResetPlayerCards(color, function(obj) return not obj.tagSet["action"] end)
     end
 
-    --ActionBlocker = {active = false, by = "", src = nil}
     if drawcard.hasTag("action") or (drawcard.hasTag("modifier") and (tonumber(drawcard.getDescription()) or 1) < 1) then
-        ActionBlocker = {active = true, by = color, src = drawcard}
+        ActionBlocker.add(color, drawcard)
         playerData.status = PlayerStatus.ActionRequired
     end
 
@@ -742,13 +754,6 @@ function Hit(object, color, alt)
                 v.hit_object.shuffle()
             end
         end
-    end
-end
-
-function HighlightActionCard(toColor)
-    if ActionBlocker.active and IsObject(ActionBlocker.src) then
-        if Player[toColor].seated then Player[toColor].pingTable(ActionBlocker.src.getPosition()) end
-        ActionBlocker.src.highlightOn("Red", 3)
     end
 end
 
@@ -981,4 +986,87 @@ function PrintDebugLogs()
         ["GameOptions"]=GameOptions
     }
     printToColor(JSON.encode_pretty(flags), "White")
+end
+
+--- ActionBlocker
+
+ActionBlocker = {}
+ActionBlocker.enabled = true
+
+function ActionBlocker.reset()
+    ActionBlocker.cards = {}
+end
+
+function ActionBlocker.add(color, object)
+    print("Added Action Card for ", color)
+    local new = {by = color, src = object}
+    table.insert(ActionBlocker.cards, new)
+end
+
+function ActionBlocker.isBlocked(color)
+    if not ActionBlocker.enabled then return false end
+    if not color then return #ActionBlocker.cards > 0 end
+    for _, card in pairs(ActionBlocker.cards) do
+        if card.by == color then
+            return true
+        end
+    end
+end
+
+function ActionBlocker.isPermitted(color)
+    if not ActionBlocker.enabled then return true end
+    if not ActionBlocker.isBlocked() then return true end
+
+    local card = ActionBlocker.get()
+    if card.by == color then return true end
+    return false
+end
+
+function ActionBlocker.get()
+    return ActionBlocker.cards[1]
+end
+
+function ActionBlocker.isAny(object)
+    for _, card in pairs(ActionBlocker.cards) do
+        if card.src == object then
+            return true
+        end
+    end
+end
+
+function ActionBlocker.update(object, color)
+    for _, card in pairs(ActionBlocker.cards) do
+        if card.src == object then
+            print("Update action card from ", card.by, " to ", color)
+            card.by = color
+        end
+    end
+end
+
+function ActionBlocker.discard(object)
+    for i, card in ipairs(ActionBlocker.cards) do
+        if card.src == object then
+            print("Remove an action card from ", card.by)
+            return table.remove(ActionBlocker.cards, i)
+        end
+    end
+end
+
+function ActionBlocker.discardFor(color)
+    print("Remove all action cards for ", color)
+    for i = #ActionBlocker.cards, 1, -1 do
+        local card = ActionBlocker.cards[i]
+        if card.by == color then
+            return table.remove(ActionBlocker.cards, i)
+        end
+    end
+end
+
+function ActionBlocker.HighlightCard(fromColor)
+    if not ActionBlocker.isBlocked() then return end
+    local actionCard = ActionBlocker.get().src
+    if IsObject(actionCard) then
+        if Player[fromColor].seated then Player[fromColor].pingTable(actionCard.getPosition()) end
+        actionCard.highlightOn("Red", 3)
+    end
 end

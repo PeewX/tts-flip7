@@ -652,7 +652,7 @@ function Stay(object, color, alt)
     if HasBeenPewd then return end
     if not ActionBlocker.isPermitted(color) then return ActionBlocker.HighlightCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
-    if PlayerHasCard(color, "zero") then return broadcastToColor("You've gotten THE ZERO!", color) end
+    if PlayerHasCard(color, "zero") and not PlayerHasCard(color, "action", {"Freeze", "OneMore"}) then return broadcastToColor("You've gotten THE ZERO!", color) end
 
     ActionBlocker.discardFor(color)
 

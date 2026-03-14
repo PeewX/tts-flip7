@@ -13,11 +13,15 @@ GameOptionDefinitions = {
 local Config = {}
 
 function onSave()
-    --return JSON.encode({})
+    return JSON.encode(config.config or {})
 end
 
 function onLoad(savedData)
     config = new(Config, self)
+
+    if savedData ~= "" then
+        config:loadConfig(savedData)
+    end
 end
 
 function None() end
@@ -28,7 +32,21 @@ function Config:constructor(object)
     self.config = {}
     self.configDefinition = {}
 
+    for _, configData in ipairs(GameOptionDefinitions) do
+        self.configDefinition[configData.id] = configData
+    end
+
     self:createToggleButton()
+end
+
+function Config:loadConfig(data)
+    local data = JSON.decode(data)
+
+    for k, v in pairs(data or {}) do
+        if self.configDefinition[k] then
+            self.config[k] = v
+        end
+    end
 end
 
 function Config:createButton(params)
@@ -79,7 +97,6 @@ function Config:toggleConfigPanel()
     local offset = 0
     for i, configData in ipairs(GameOptionDefinitions) do
         local option = configData.id
-        self.configDefinition[option] = configData
 
         -- Labels
         self:createButton({

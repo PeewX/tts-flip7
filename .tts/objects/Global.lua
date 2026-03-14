@@ -32,6 +32,7 @@ DeckModes = {
 }
 
 -- Globals
+
 PlayerData = {}
 GameOptions = {}
 NextPlayerStartToken = nil
@@ -41,6 +42,7 @@ BrutalScoreDecision = {active = false, by = ""}
 GameOptions = {
     UseAutoRestart = true
 }
+LastButtonHit = os.time()
 
 function UpdateGameOptions(options)
     GameOptions = options
@@ -280,6 +282,9 @@ function ResetGame(_, color, _)
         return
     end
 
+    if os.time() - LastButtonHit < 5 then return end
+    LastButtonHit = os.time()
+
     -- reset player specific data
     for _, v in pairs(PlayerData) do
         v.status = PlayerStatus.Active
@@ -403,7 +408,9 @@ end
 function NewRoundCheck(object, color, alt)
     if alt then return end
     if WaitForNewRound then return end
+    if os.time() - LastButtonHit < 5 then return end
     if AllPlayersDone() then return NewRound() end
+    LastButtonHit = os.time()
 
     Player[color].showConfirmDialog("Not everyone has finished. Start the next round anyway?", NewRound)
 end
@@ -634,8 +641,10 @@ end
 function Bust(object, color, alt)
     if alt then return end
     if WaitForNewRound then return end
+    if os.time() - LastButtonHit < 0.5 then return end
     if not ActionBlocker.isPermitted(color) then return ActionBlocker.HighlightCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
+    LastButtonHit = os.time()
 
     ActionBlocker.discardFor(color)
 
@@ -656,9 +665,11 @@ function Stay(object, color, alt)
     if alt then return end
     if WaitForNewRound then return end
     if HasBeenPewd then return end
+    if os.time() - LastButtonHit < 0.5 then return end
     if not ActionBlocker.isPermitted(color) then return ActionBlocker.HighlightCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
     if PlayerHasCard(color, "zero") and not PlayerHasCard(color, "action", {"Freeze", "OneMore"}) then return broadcastToColor("You've gotten THE ZERO!", color) end
+    LastButtonHit = os.time()
 
     ActionBlocker.discardFor(color)
 
@@ -669,16 +680,14 @@ function Stay(object, color, alt)
     ResetPlayerCards(color, function(obj) return obj.tagSet["action"] end, true)
 end
 
-local lastHit = os.time()
 function Hit(object, color, alt)
     if alt then return end
     if WaitForNewRound then return end
     if HasBeenPewd then return end
+    if os.time() - LastButtonHit < 0.5 then return end
     if not ActionBlocker.isPermitted(color) then return ActionBlocker.HighlightCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
-
-    if os.time() - lastHit < 0.5 then return end
-    lastHit = os.time()
+    LastButtonHit = os.time()
 
     if IsObject(NextPlayerStartToken) then NextPlayerStartToken.destruct() end
 

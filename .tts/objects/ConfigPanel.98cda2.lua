@@ -1,12 +1,13 @@
 GameOptionDefinitions = {
-    UseAutoRestart = {type = "bool", default = true},
-    AutoRestartSeconds = {type = "input", default = 5},
-    ColorTintTokens = {type = "bool", default = true},
-    Scoreboard = {type = "bool", default = true},
-    NextStartingPlayer = {type = "selection", default = 1, selection = {"Random", "Next", "Lowest", "Highest"}},
-    ActionCardBlocker = {type = "bool", default = true},
-    CheatMode = {type = "bool", default = false},
-    Debug = {type = "bool", default = false}
+    {id = "Autostart", label = "Autostart next round", description = "Off\nBrutal: Only after brutal decision\nRound: Only when round is finished\nBoth", type = "selection", default = 1, selection = {"Off", "Brutal", "Round", "Both"}},
+    {id = "AutostartSeconds", label = "Autostart countdown", description = "in seconds", type = "input", default = 5},
+    {id = "NextRoundPlayer", label = "Next round starting player", description = "", type = "selection", default = 1, selection = {"Random", "Next", "Lowest", "Highest"}},
+    {id = "NextGamePlayer", label = "Next game starting player", description = "", type = "selection", default = 1, selection = {"Random", "Next", "Lowest", "Highest"}},
+    {id = "Scoreboard", label = "Scoreboard", description = "", type = "bool", default = true},
+    {id = "ColoredTokens", label = "Colored tokens", description = "", type = "bool", default = true},
+    {id = "ActionBlocker", label = "Action card blocker", description = "", type = "bool", default = true},
+    {id = "CheatMode", label = "Cheat Mode", description = "", type = "bool", default = false},
+    {id = "Debug", label = "Debug Mode", description = "", type = "bool", default = false}
 }
 
 local Config = {}
@@ -25,6 +26,7 @@ function Config:constructor(object)
     self._self = object
     self.visible = false
     self.config = {}
+    self.configDefinition = {}
 
     self:createToggleButton()
 end
@@ -60,12 +62,12 @@ function Config:createToggleButton()
         label          = "Configurations",
         position       = {0, 0.25, 0},
         rotation       = {0, 180, 0},
-        scale          = {0.2, 1, 0.2},
+        scale          = {0.4, 1, 0.4},
         width          = 4000,
         height         = 1000,
         color          = "White",
         font_color     = "Black",
-        font_size      = 500,
+        font_size      = 600,
     })
 
     self.visible = false
@@ -75,15 +77,18 @@ function Config:toggleConfigPanel()
     if self.visible then return self:createToggleButton() end
 
     local offset = 0
-    for option, configData in pairs(GameOptionDefinitions) do
+    for i, configData in ipairs(GameOptionDefinitions) do
+        local option = configData.id
+        self.configDefinition[option] = configData
+
         -- Labels
         self:createButton({
             click_function = "None",
             function_owner = self._self,
-            label          = option,
-            position       = {0, 0.25, -1 - offset*0.5},
+            label          = configData.label,
+            position       = {0, 0.25, -2 - offset*1},
             rotation       = {0, 180, 0},
-            scale          = {0.2, 1, 0.2},
+            scale          = {0.35, 1, 0.35},
             width          = 0,
             height         = 0,
             font_color     = "White",
@@ -94,7 +99,7 @@ function Config:toggleConfigPanel()
             self.config[option] = configData.default
         end
 
-        local position = {-3, 0.25, -1 - offset * 0.5}
+        local position = {-5, 0.25, -2 - offset*1}
         local value = self.config[option]
 
         if configData.type == "bool" then
@@ -102,9 +107,10 @@ function Config:toggleConfigPanel()
                 click_function = option,
                 function_owner = self._self,
                 label          = value and string.char(10008) or "",
+                tooltip        = configData.description or "",
                 position       = position,
                 rotation       = {0, 180, 0},
-                scale          = {0.2, 1, 0.2},
+                scale          = {0.35, 1, 0.35},
                 width          = 1000,
                 height         = 1000,
                 font_color     = "Black",
@@ -114,18 +120,18 @@ function Config:toggleConfigPanel()
         elseif configData.type == "input" then
             self:createInput({
                 label           = "",
+                tooltip        = configData.description or "",
                 input_function  = option,
                 function_owner  = self._self,
                 validation      = 2,
                 alignment       = 3,
                 position        = position,
                 rotation        = {0, 180, 0},
-                scale           = {0.2, 1, 0.2},
+                scale           = {0.35, 1, 0.35},
                 width           = 1500,
                 height          = 1000,
                 font_size       = 1200,
                 font_color      = "Black",
-                tooltip         = "",
                 value           = value,
             })
 
@@ -134,9 +140,10 @@ function Config:toggleConfigPanel()
                 click_function = option,
                 function_owner = self._self,
                 label          = configData.selection[value],
+                tooltip        = configData.description or "",
                 position       = position,
                 rotation       = {0, 180, 0},
-                scale          = {0.2, 1, 0.2},
+                scale          = {0.35, 1, 0.35},
                 width          = 4000,
                 height         = 1000,
                 font_color     = "Black",
@@ -191,20 +198,20 @@ function Config:toggleSelection(button, object, color, alt)
 
     local index = self.buttonData[button]
     self.config[button] = self.config[button] + 1
-    if self.config[button] > #GameOptionDefinitions[button].selection then self.config[button] = 1 end
-    local next = GameOptionDefinitions[button].selection[self.config[button]]
+    if self.config[button] > #self.configDefinition[button].selection then self.config[button] = 1 end
+    local next = self.configDefinition[button].selection[self.config[button]]
 
     self._self.editButton({index = index, label = next})
 end
 
 -- Wrapper functions
 function ToggleConfigPanel(...) return config:toggleConfigPanel(...) end
-for k, v in pairs(GameOptionDefinitions) do if v.type == "input" then _G[k] = function(...) return config:inputEdit(k, ...) end end end
-for k, v in pairs(GameOptionDefinitions) do if v.type == "selection" then _G[k] = function(...) return config:toggleSelection(k, ...) end end end
-for k, v in pairs(GameOptionDefinitions) do if v.type == "bool" then _G[k] = function(...) return config:toggleCheckbox(k, ...) end end end
+for _, v in ipairs(GameOptionDefinitions) do if v.type == "input" then _G[v.id] = function(...) return config:inputEdit(v.id, ...) end end end
+for _, v in ipairs(GameOptionDefinitions) do if v.type == "selection" then _G[v.id] = function(...) return config:toggleSelection(v.id, ...) end end end
+for _, v in ipairs(GameOptionDefinitions) do if v.type == "bool" then _G[v.id] = function(...) return config:toggleCheckbox(v.id, ...) end end end
 
 -- Utils
--- lass (credits sbx320/classlib)
+-- class (credits sbx320/classlib)
 function new(class, ...)
 	assert(type(class) == "table", "first argument provided to new is not a table")
 

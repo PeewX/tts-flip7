@@ -10,38 +10,45 @@ GameOptionDefinitions = {
     {id = "Debug", label = "Debug Mode", description = "", type = "bool", default = false}
 }
 
+-- Config ENUM
+CONFIG = {
+    AUTOSTART = {
+        OFF = 0,
+        BRUTAL = 1,
+        ROUND = 2,
+        BOTH = 3
+    },
+    NEXT_PLAYER = {
+        RANDOM = 0,
+        NEXT = 1,
+        LOWEST = 2,
+        HIGHEST = 3,
+    }
+}
+
 local Config = {}
-
-function onSave()
-    return JSON.encode(config.config or {})
-end
-
-function onLoad(savedData)
-    config = new(Config, self)
-
-    if savedData ~= "" then
-        config:loadConfig(savedData)
-    end
-end
 
 function None() end
 
-function Config:constructor(object)
+function Config:constructor(object, savedData)
     self._self = object
     self.visible = false
     self.config = {}
     self.configDefinition = {}
 
     for _, configData in ipairs(GameOptionDefinitions) do
+        self.config[configData.id] = configData.default
         self.configDefinition[configData.id] = configData
     end
 
+    self:loadConfig(savedData)
     self:createToggleButton()
+    self:push()
 end
 
 function Config:loadConfig(data)
-    local data = JSON.decode(data)
-
+    if data == "" then return end
+    data = JSON.decode(data)
     for k, v in pairs(data or {}) do
         if self.configDefinition[k] then
             self.config[k] = v
@@ -111,10 +118,6 @@ function Config:toggleConfigPanel()
             font_color     = "White",
             font_size      = 1500,
         })
-
-        if self.config[option] == nil then
-            self.config[option] = configData.default
-        end
 
         local position = {-5, 0.25, -2 - offset*1}
         local value = self.config[option]
@@ -189,6 +192,8 @@ function Config:inputEdit(button, object, color, input, stillEditing)
         self.config[button] = fixedinput
         print("New: ", self.config[button])
 
+        self:push()
+
         if fixedinput ~= input then
             self._self.editInput({index = index, value = tostring(self.config[button])})
         end
@@ -207,6 +212,7 @@ function Config:toggleCheckbox(button, object, color, alt)
     self._self.editButton({index = index, label = self.config[button] and string.char(10008) or ""})
 
     print("Click: ", button)
+    self:push()
 end
 
 function Config:toggleSelection(button, object, color, alt)
@@ -219,6 +225,11 @@ function Config:toggleSelection(button, object, color, alt)
     local next = self.configDefinition[button].selection[self.config[button]]
 
     self._self.editButton({index = index, label = next})
+    self:push()
+end
+
+function Config:push()
+    Global.call("UpdateGameOptions", self.config)
 end
 
 -- Wrapper functions
@@ -226,6 +237,18 @@ function ToggleConfigPanel(...) return config:toggleConfigPanel(...) end
 for _, v in ipairs(GameOptionDefinitions) do if v.type == "input" then _G[v.id] = function(...) return config:inputEdit(v.id, ...) end end end
 for _, v in ipairs(GameOptionDefinitions) do if v.type == "selection" then _G[v.id] = function(...) return config:toggleSelection(v.id, ...) end end end
 for _, v in ipairs(GameOptionDefinitions) do if v.type == "bool" then _G[v.id] = function(...) return config:toggleCheckbox(v.id, ...) end end end
+
+-- Events
+function onLoad(savedData)
+    Global.setTable("CONFIG", CONFIG)
+    config = new(Config, self, savedData)
+end
+
+function onSave()
+    if config and config.config then
+        return JSON.encode(config.config or {})
+    end
+end
 
 -- Utils
 -- class (credits sbx320/classlib)

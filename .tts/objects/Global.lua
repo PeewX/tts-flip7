@@ -33,16 +33,22 @@ DeckModes = {
 
 -- Globals
 PlayerData = {}
+GameOptions = {}
 NextPlayerStartToken = nil
+DebugTimer = nil
 WaitForNewRound = true
 BrutalScoreDecision = {active = false, by = ""}
 ActionBlocker = {active = false, by = "", src = nil}
-GameOptions = {
-    UseAutoRestart = true
-}
 
 function UpdateGameOptions(options)
     GameOptions = options
+
+    if DebugTimer then Wait.stop(DebugTimer) end
+    if GameOptions.Debug then
+        DebugTimer = Wait.time(PrintDebugLogs, 10, -1)
+    end
+
+    UI.setAttribute("table", "active", tostring(GameOptions.Scoreboard))
 end
 
 -- Overwrite getSeatedPlayers to return the colors in correct order
@@ -138,9 +144,6 @@ function onLoad()
 
     -- Running CountItems two times a second
     Wait.time(CountItems, 0.5, -1)
-
-    -- Debug logs
-    --Wait.time(PrintDebugLogs, 10, -1)
 end
 
 function InitPlayerData()

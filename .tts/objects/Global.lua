@@ -36,12 +36,11 @@ DeckModes = {
 PlayerData = {}
 GameOptions = {}
 NextPlayerStartToken = nil
+AutostartTimer = nil
 DebugTimer = nil
 WaitForNewRound = true
 BrutalScoreDecision = {active = false, by = ""}
-GameOptions = {
-    UseAutoRestart = true
-}
+GameOptions = {}
 LastButtonHit = os.time()
 
 function UpdateGameOptions(options)
@@ -53,6 +52,16 @@ function UpdateGameOptions(options)
     end
 
     UI.setAttribute("table", "active", tostring(GameOptions.Scoreboard))
+
+    if GameOptions.Autostart == CONFIG.AUTOSTART.OFF then
+        if WaitForNewRound and AutostartTimer then
+            Wait.stop(AutostartTimer)
+            HitBtn.call("AutostartCancel", false)
+            WaitForNewRound = false
+        end
+    elseif GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.ROUND then
+        if AllPlayersDone() then AutostartNextRound() end
+    end
 end
 
 -- Overwrite getSeatedPlayers to return the colors in correct order
@@ -159,7 +168,6 @@ function onLoad()
         addHotkey(func, function(color, object, pos, keyUp) if keyUp and StartingPlayer > 0 then _G[func](object, color, false) end end, true)
     end
 
-    -- Running CountItems two times a second
     Wait.time(CountItems, 0.5, -1)
 end
 
@@ -407,8 +415,16 @@ end
 
 function NewRoundCheck(object, color, alt)
     if alt then return end
-    if WaitForNewRound then return end
-    if os.time() - LastButtonHit < 5 then return end
+    if WaitForNewRound then
+        if AutostartTimer then 
+            Wait.stop(AutostartTimer)
+            broadcastToAll(("Autostart cancled by %s"):format(Player[color].steam_name or color))
+            HitBtn.call("AutostartCancel", false)
+            WaitForNewRound = false
+        end
+        return
+    end
+    if os.time() - LastButtonHit < 3 then return end
     if AllPlayersDone() then return NewRound() end
     LastButtonHit = os.time()
 
@@ -448,6 +464,7 @@ function NewRound()
     WaitForNewRound = false
     ShiftStartingPlayer()
     ActionBlocker.reset()
+    HitBtn.call("AutostartCancel", false)
 end
 
 function SetBrutalModeEndScore(object, color, alt)
@@ -471,7 +488,9 @@ function SetBrutalModeEndScore(object, color, alt)
         broadcastToAll(("%s removed 15 points from %s"):format(Player[color].steam_name or color, Player[targetPlayerColor].steam_name or targetPlayerColor))
     end
 
-    StartNewRoundWithTimer()
+    if GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.FLIP7 then
+        AutostartNextRound()
+    end
     UpdateScoreBoard()
 end
 
@@ -612,7 +631,9 @@ function CountItems()
             else
                 score = score + 15
                 broadcastToAll(("%s has 7 cards and ends the round"):format(Player[color].steam_name or color))
-                StartNewRoundWithTimer()
+                if GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.FLIP7 then
+                    AutostartNextRound()
+                end
             end
         end
 
@@ -659,6 +680,10 @@ function Bust(object, color, alt)
 
     CreateTokenForPlayer(color, BustedBag)
     ResetPlayerCards(color, function(obj) return obj.tagSet["action"] end, true)
+
+    if GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.ROUND then
+        if AllPlayersDone() then AutostartNextRound() end
+    end
 end
 
 function Stay(object, color, alt)
@@ -678,6 +703,10 @@ function Stay(object, color, alt)
 
     CreateTokenForPlayer(color, StayBag)
     ResetPlayerCards(color, function(obj) return obj.tagSet["action"] end, true)
+
+    if GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.ROUND then
+        if AllPlayersDone() then AutostartNextRound() end
+    end
 end
 
 function Hit(object, color, alt)
@@ -922,14 +951,16 @@ function UsePhysicsCast(customCastParams)
     })
 end
 
-function StartNewRoundWithTimer(countdown)
-    if not GameOptions.UseAutoRestart then return end
-    countdown = countdown or 3
+function AutostartNextRound()
+    if WaitForNewRound then return end
+    if GameOptions.Autostart == CONFIG.AUTOSTART.OFF then return end
+    HitBtn.call("AutostartCancel", true)
     WaitForNewRound = true
 
+    local countdown = GameOptions.AutostartSeconds or 5
     broadcastToAll("Next round will start in")
     broadcastToAll(("%d.."):format(countdown))
-    Wait.time(
+    AutostartTimer = Wait.time(
         function()
             countdown = countdown - 1
             if countdown == 0 then return NewRound() end
@@ -994,7 +1025,7 @@ end
 function PrintDebugLogs()
     local flags = {
         ["HasBeenPewd"]=HasBeenPewd,
-        --["NextPlayerStartToken"]=NextPlayerStartToken,
+        --["NextPlayerStartToken"]=IsObject(NextPlayerStartToken),
         ["WaitForNewRound"]=WaitForNewRound,
         ["BrutalScoreDecision"]=BrutalScoreDecision,
         ["ActionBlocker"]=ActionBlocker,

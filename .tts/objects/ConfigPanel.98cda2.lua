@@ -1,5 +1,5 @@
 GameOptionDefinitions = {
-    {id = "Autostart", label = "Autostart next round", description = "Off\nBrutal: Only after brutal decision\nRound: Only when round is finished\nBoth", type = "selection", default = 1, selection = {"Off", "Brutal", "Round", "Both"}},
+    {id = "Autostart", label = "Autostart next round", description = "Off\nFlip 7: Only after Flip 7 reached\nRound: Only everyone stayed/busted\nAlways", type = "selection", default = 1, selection = {"Off", "Flip 7", "Round", "Always"}},
     {id = "AutostartSeconds", label = "Autostart countdown", description = "in seconds", type = "input", default = 5},
     {id = "NextRoundPlayer", label = "Next round starting player", description = "", type = "selection", default = 1, selection = {"Random", "Next", "Lowest", "Highest"}},
     {id = "NextGamePlayer", label = "Next game starting player", description = "", type = "selection", default = 1, selection = {"Random", "Next", "Lowest", "Highest"}},
@@ -13,16 +13,16 @@ GameOptionDefinitions = {
 -- Config ENUM
 CONFIG = {
     AUTOSTART = {
-        OFF = 0,
-        BRUTAL = 1,
-        ROUND = 2,
-        BOTH = 3
+        OFF = 1,
+        FLIP7 = 2,
+        ROUND = 3,
+        ALWAYS = 4
     },
     NEXT_PLAYER = {
-        RANDOM = 0,
-        NEXT = 1,
-        LOWEST = 2,
-        HIGHEST = 3,
+        RANDOM = 1,
+        NEXT = 2,
+        LOWEST = 3,
+        HIGHEST = 4,
     }
 }
 

@@ -67,7 +67,6 @@ function CreateScoreTileUI(params)
     local Scale = params[3]
     local Bound = params[4]
 
-
     for _, v in pairs(PlayerData) do
         local scoreTile = v.scoreTile
         local scriptZone = v.scriptZone
@@ -154,3 +153,13 @@ function ResetBrutalButton(PlayerData)
 end
 
 function None() end
+
+function AutostartCancel(active)
+    self.editButton({
+        index       = 2,
+        label       = active and "Cancel" or "Next Round",
+        color       = active and {1, 0.2, 0.2, 1} or {0, 0, 0.2, 0.9},
+        font_color  = active and "Black" or {0.8, 0.8, 0.8, 0.9},
+        tooltip     = active and "Cancel Autostart countdown" or "Update scores, start next round"
+    })
+end

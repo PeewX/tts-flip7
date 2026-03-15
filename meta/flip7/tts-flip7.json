@@ -22,7 +22,7 @@
   "PlayArea": 0.5,
   "Table": "Table_None",
   "Sky": "Sky_Museum",
-  "Note": "",
+  "Note": "Set hotkeys via Options → Game Keys\r\nUse Stay for Freeze or Just One More!\r\nRight click tokens to undo Stayed/Busted\r\nScoreboard can be moved freely\r\nIn Brutal mode, +15/‑15 buttons appear at Flip 7\r\nBegin token rotation follows configuration\r\nNew game starts always with a random player\r\nAlso check out the configuration panel\r\n\r\nFusion Deck is awesome!\r\n\r\nPedda suxx\r\nJay suxx\r\n\r\nPowered by PewPorn.com",
   "TabStates": {
     "0": {
       "title": "Rules",

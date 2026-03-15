@@ -6,6 +6,7 @@ GameOptionDefinitions = {
     {id = "Scoreboard", label = "Scoreboard", description = "", type = "bool", default = true},
     {id = "ColoredTokens", label = "Colored tokens", description = "", type = "bool", default = true},
     {id = "ActionBlocker", label = "Action card blocker", description = "", type = "bool", default = true},
+    {id = "MoveSecondChance", label = "Move Second Chance", description = "", type = "bool", default = true},
     --{id = "CheatMode", label = "Cheat Mode", description = "", type = "bool", default = false},
     --{id = "Debug", label = "Debug Mode", description = "", type = "bool", default = false}
 }

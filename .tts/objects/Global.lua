@@ -594,7 +594,16 @@ function CountItems()
                             object.src.highlightOn("Red", BUSTED_CARD_HIGHLIGHT_DURATION)
                             seenNumberTableData.obj.highlightOn("Red", BUSTED_CARD_HIGHLIGHT_DURATION)
                             if hasSecondChance then
-                               if player.seated then player.pingTable(hasSecondChance.getPosition()) end
+                                local pingPosition = hasSecondChance.getPosition()
+                                if GameOptions.MoveSecondChance then
+                                    local _, topCard = GetSecondChances(color)
+                                    if topCard then
+                                        pingPosition =  object.src.positionToWorld(Vector(0, 0.5, 2))
+                                        topCard.setPositionSmooth(pingPosition, false, false)
+                                    end
+                                end
+
+                               if player.seated then player.pingTable(pingPosition) end
                                hasSecondChance.highlightOn("White", BUSTED_CARD_HIGHLIGHT_DURATION)
                             end
                         end
@@ -747,16 +756,12 @@ function Hit(object, color, alt)
     -- SecondChance
     if drawcard.hasTag("chance") then
         local point = playerData.snapPoints.chance[1]
-        local cards = UsePhysicsCast({origin = point.position, direction = {0, 1, 0}})
-        drawcard.setRotationSmooth(Vector(0, playerData.positionData.handTransform.rotation.y + 180, 0), false, false)
+        local _, top = GetSecondChances(color)
         local targetPosition = point.position
-
-        if #cards > 1 then  -- we always get the board
-            -- It seems the topmost card is always the first index..
-            targetPosition = cards[1].hit_object.positionToWorld(Vector(-1, 0.1, 0))
-        end
+        if top then targetPosition = top.positionToWorld(Vector(-1, 0.5, 0)) end
 
         drawcard.setPositionSmooth(targetPosition, false, false)
+        drawcard.setRotationSmooth(Vector(0, playerData.positionData.handTransform.rotation.y + 180, 0), false, false)
         targetSnapPoints = nil -- we don't need further positioning
     end
 
@@ -803,6 +808,26 @@ function Hit(object, color, alt)
             end
         end
     end
+end
+
+function GetSecondChances(color)
+    local point = PlayerData[color].snapPoints.chance[1]
+    local cards = UsePhysicsCast({origin = point.position, size = {4, 2, 1}})
+    local topCard = nil
+
+    local secondChances = {}
+    for i, card in ipairs(cards) do
+        if card.hit_object.hasTag("chance") then
+            table.insert(secondChances, card.hit_object)
+
+            -- It seems the topmost card is always the first index..
+            if i == 1 then
+                topCard = (card.hit_object.type == "Deck" and card.hit_object.takeObject() or card.hit_object) or card.hit_object
+            end
+        end
+    end
+
+    return secondChances, topCard
 end
 
 -- Rotate Offset

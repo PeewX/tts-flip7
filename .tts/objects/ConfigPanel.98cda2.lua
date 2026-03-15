@@ -1,5 +1,5 @@
 GameOptionDefinitions = {
-    {id = "Autostart", label = "Autostart next round", description = "Off\nFlip 7: Only after Flip 7 reached\nRound: Only everyone stayed/busted\nAlways", type = "selection", default = 1, selection = {"Off", "Flip 7", "Round", "Always"}},
+    {id = "Autostart", label = "Autostart next round", description = "Off\nFlip 7: Only after Flip 7 reached\nRound: Only everyone stayed/busted\nAlways", type = "selection", default = 4, selection = {"Off", "Flip 7", "Round", "Always"}},
     {id = "AutostartSeconds", label = "Autostart countdown", description = "in seconds", type = "input", default = 5},
     {id = "NextRoundPlayer", label = "Next round starting player", description = "CW: Clockwise\nCCW: Counter-Clockwise\nRandom\nLowest: Player with lowest score\nHighest: Player with highest score", type = "selection", default = 1, selection = {"CW", "CCW", "Random", "Lowest", "Highest"}},
     --{id = "NextGamePlayer", label = "Next game starting player", description = "", type = "selection", default = 1, selection = {"Random", "Next", "Lowest", "Highest"}},

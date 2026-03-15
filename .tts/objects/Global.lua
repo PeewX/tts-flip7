@@ -59,8 +59,6 @@ function UpdateGameOptions(options)
             HitBtn.call("AutostartCancel", false)
             WaitForNewRound = false
         end
-    elseif GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.ROUND then
-        if AllPlayersDone() then AutostartNextRound() end
     end
 
     if not GameOptions.ActionBlocker then
@@ -110,6 +108,7 @@ function onObjectDrop(color, object)
                 if droppedZone == "Discard" or object:hasTag("modifier") then
                     ActionBlocker.discard(object)
                 elseif playerData and playerData.status ~= PlayerStatus.Busted then
+                    playerData.resetState = playerData.status
                     playerData.status = PlayerStatus.ActionRequired
                     ActionBlocker.update(object, droppedZone)
                 end
@@ -301,6 +300,7 @@ function ResetGame(_, color, _)
     -- reset player specific data
     for _, v in pairs(PlayerData) do
         v.status = PlayerStatus.Active
+        v.resetState = false
         v.scoreTile.editInput({index = 0, value = 0})
     end
 
@@ -443,6 +443,7 @@ function NewRound()
     for _, color in pairs(PLAYER_COLORS) do
         local playerData = PlayerData[color]
         playerData.status = PlayerStatus.Active
+        playerData.resetState = false
 
         -- update score
         local currentScore = playerData.scoreTile.getInputs()[1].value
@@ -611,7 +612,7 @@ function CountItems()
         end
 
         if not hasDuplicateNumber and not ActionBlocker.isBlocked(color) and PlayerData[color].status == PlayerStatus.ActionRequired then
-            PlayerData[color].status = PlayerStatus.Active
+            PlayerData[color].status = PlayerData[color].resetState or PlayerStatus.Active
         end
 
         score = math.floor(numberSum * mult + plusSum)
@@ -653,6 +654,10 @@ function CountItems()
     if not anyDuplicate then HasBeenPewd = false end
 
     UpdateScoreBoard()
+
+    if GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.ROUND then
+        if AllPlayersDone() then AutostartNextRound() end
+    end
 end
 
 function RemoveToken(color, position, object)
@@ -660,6 +665,7 @@ function RemoveToken(color, position, object)
         if object.getGMNotes() == color then
             object.destroy()
             PlayerData[color].status = PlayerStatus.Active
+            PlayerData[color].resetState = false
         end
     end
 end
@@ -685,10 +691,6 @@ function Bust(object, color, alt)
 
     CreateTokenForPlayer(color, BustedBag)
     ResetPlayerCards(color, function(obj) return obj.tagSet["action"] end, true)
-
-    if GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.ROUND then
-        if AllPlayersDone() then AutostartNextRound() end
-    end
 end
 
 function Stay(object, color, alt)
@@ -708,10 +710,6 @@ function Stay(object, color, alt)
 
     CreateTokenForPlayer(color, StayBag)
     ResetPlayerCards(color, function(obj) return obj.tagSet["action"] end, true)
-
-    if GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.ROUND then
-        if AllPlayersDone() then AutostartNextRound() end
-    end
 end
 
 function Hit(object, color, alt)
@@ -830,7 +828,7 @@ end
 function PlayerHasCard(color, tag, descriptions)
     local allObjects = GetAllPlayerObjects(color, true)
     for _, object in pairs(allObjects) do
-        if object.tagSet[tag] then
+        if object.tagSet[tag] and not object.src.held_by_color then
             if descriptions then
                 for _, description in pairs(descriptions) do
                     if object.description == description then

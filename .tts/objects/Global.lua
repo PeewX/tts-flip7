@@ -317,7 +317,7 @@ function ResetGame(_, color, _)
     end
 
     drawDeck.shuffle()
-    WaitForNewRound = false
+    WaitForNewRound, AutostartCanceled = false, false
     ShiftStartingPlayer(true)
 end
 
@@ -423,9 +423,10 @@ function NewRoundCheck(object, color, alt)
     if WaitForNewRound then
         if AutostartTimer then 
             Wait.stop(AutostartTimer)
-            broadcastToAll(("Autostart cancled by %s"):format(Player[color].steam_name or color))
+            broadcastToAll(("Autostart canceled by %s"):format(Player[color].steam_name or color))
             HitBtn.call("AutostartCancel", false)
             WaitForNewRound = false
+            AutostartCanceled = true
         end
         return
     end
@@ -467,7 +468,7 @@ function NewRound()
         BrutalScoreDecision.active = false
     end
 
-    WaitForNewRound = false
+    WaitForNewRound, AutostartCanceled = false, false
     ShiftStartingPlayer()
     ActionBlocker.reset()
     HitBtn.call("AutostartCancel", false)
@@ -622,7 +623,7 @@ function CountItems()
                 if not BrutalScoreDecision.active then
                     BrutalScoreDecision.active = true
                     BrutalScoreDecision.by = color
-                    for _, brutalPlayerColor in pairs(PLAYER_COLORS) do
+                    for _, brutalPlayerColor in pairs(getSeatedPlayers()) do
                         local buttonLabel = brutalPlayerColor == color and "+15" or "-15"
                         local buttonColor = brutalPlayerColor == color and {0.6, 0.8, 0.6} or {0.8, 0.6, 0.6}
 
@@ -970,6 +971,7 @@ function UsePhysicsCast(customCastParams)
 end
 
 function AutostartNextRound()
+    if AutostartCanceled then return end
     if WaitForNewRound then return end
     if GameOptions.Autostart == CONFIG.AUTOSTART.OFF then return end
     HitBtn.call("AutostartCancel", true)

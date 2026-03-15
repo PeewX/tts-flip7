@@ -1,13 +1,13 @@
 GameOptionDefinitions = {
     {id = "Autostart", label = "Autostart next round", description = "Off\nFlip 7: Only after Flip 7 reached\nRound: Only everyone stayed/busted\nAlways", type = "selection", default = 1, selection = {"Off", "Flip 7", "Round", "Always"}},
     {id = "AutostartSeconds", label = "Autostart countdown", description = "in seconds", type = "input", default = 5},
-    {id = "NextRoundPlayer", label = "Next round starting player", description = "", type = "selection", default = 1, selection = {"Random", "Next", "Lowest", "Highest"}},
-    {id = "NextGamePlayer", label = "Next game starting player", description = "", type = "selection", default = 1, selection = {"Random", "Next", "Lowest", "Highest"}},
+    {id = "NextRoundPlayer", label = "Next round starting player", description = "CW: Clockwise\nCCW: Counter-Clockwise\nRandom\nLowest: Player with lowest score\nHighest: Player with highest score", type = "selection", default = 1, selection = {"CW", "CCW", "Random", "Lowest", "Highest"}},
+    --{id = "NextGamePlayer", label = "Next game starting player", description = "", type = "selection", default = 1, selection = {"Random", "Next", "Lowest", "Highest"}},
     {id = "Scoreboard", label = "Scoreboard", description = "", type = "bool", default = true},
     {id = "ColoredTokens", label = "Colored tokens", description = "", type = "bool", default = true},
     {id = "ActionBlocker", label = "Action card blocker", description = "", type = "bool", default = true},
-    {id = "CheatMode", label = "Cheat Mode", description = "", type = "bool", default = false},
-    {id = "Debug", label = "Debug Mode", description = "", type = "bool", default = false}
+    --{id = "CheatMode", label = "Cheat Mode", description = "", type = "bool", default = false},
+    --{id = "Debug", label = "Debug Mode", description = "", type = "bool", default = false}
 }
 
 -- Config ENUM
@@ -19,10 +19,11 @@ CONFIG = {
         ALWAYS = 4
     },
     NEXT_PLAYER = {
-        RANDOM = 1,
-        NEXT = 2,
-        LOWEST = 3,
-        HIGHEST = 4,
+        CW = 1,
+        CCW = 2,
+        RANDOM = 3,
+        LOWEST = 4,
+        HIGHEST = 5,
     }
 }
 
@@ -188,17 +189,13 @@ function Config:inputEdit(button, object, color, input, stillEditing)
     if input then
         local fixedinput = math.max(math.min(input, 10), 1)
 
-        print("Previous: ", self.config[button])
         self.config[button] = fixedinput
-        print("New: ", self.config[button])
-
         self:push()
 
         if fixedinput ~= input then
             self._self.editInput({index = index, value = tostring(self.config[button])})
         end
     else
-        print("Reset: ", self.config[button])
         self._self.editInput({index = index, value = tostring(self.config[button])})
     end
 end
@@ -210,8 +207,6 @@ function Config:toggleCheckbox(button, object, color, alt)
     local index = self.buttonData[button]
     self.config[button] = not self.config[button]
     self._self.editButton({index = index, label = self.config[button] and string.char(10008) or ""})
-
-    print("Click: ", button)
     self:push()
 end
 

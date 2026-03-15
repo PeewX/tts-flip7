@@ -62,6 +62,10 @@ function UpdateGameOptions(options)
     elseif GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.ROUND then
         if AllPlayersDone() then AutostartNextRound() end
     end
+
+    if not GameOptions.ActionBlocker then
+        ActionBlocker.reset()
+    end
 end
 
 -- Overwrite getSeatedPlayers to return the colors in correct order
@@ -118,12 +122,13 @@ function onObjectDrop(color, object)
     if object.type == "Card" and object.hasTag("action") then
         local tagSet = GenTagSet(object.getTags(), true)
         local description = object.getDescription()
+
         if tagSet["action"] and (description == "Flip3" or description == "Flip4" or description == "OneMore") then
             local targetColor = false
             for _, v in pairs(object.getZones()) do if PlayerData[v.getGMNotes()] and v.getGMNotes() ~= color then targetColor = v.getGMNotes() end end
             if targetColor then
                 local playerData = PlayerData[targetColor]
-                if playerData.status == PlayerStatus.Stayed and IsObject(playerData.token) then
+                if  IsObject(playerData.token) and (playerData.status == PlayerStatus.Stayed or playerData.status == PlayerStatus.ActionRequired) then
                     playerData.tokenReset = true
                     playerData.token.setColorTint(Color(TOKEN_COLORS[targetColor]):lerp(Color.Black, 0.8))
                 end
@@ -142,7 +147,7 @@ function onObjectLeaveZone(zone, object)
         if not PlayerHasCard(playerColor, "action", {"Flip3", "Flip4", "OneMore"}) then
             PlayerData[playerColor].tokenReset = false
             if IsObject(PlayerData[playerColor].token) then
-                PlayerData[playerColor].token.setColorTint(TOKEN_COLORS[playerColor])
+                PlayerData[playerColor].token.setColorTint(GameOptions.ColoredTokens and TOKEN_COLORS[playerColor] or {1, 1, 1})
             end
         end
     end
@@ -880,10 +885,22 @@ end
 function ShiftStartingPlayer(init)
     local seatedPlayers = getSeatedPlayers()
     if #seatedPlayers > 0 then
-        StartingPlayer = init and math.random(1, #seatedPlayers) or (StartingPlayer + 1)
-        if StartingPlayer > #seatedPlayers then
-            StartingPlayer = 1
+        if init or (GameOptions.NextRoundPlayer == CONFIG.NEXT_PLAYER.RANDOM) then
+            StartingPlayer = math.random(1, #seatedPlayers)
+        else
+            if GameOptions.NextRoundPlayer == CONFIG.NEXT_PLAYER.CW then
+                StartingPlayer = StartingPlayer + 1
+            elseif GameOptions.NextRoundPlayer == CONFIG.NEXT_PLAYER.CCW then
+                StartingPlayer = StartingPlayer - 1
+            elseif GameOptions.NextRoundPlayer == CONFIG.NEXT_PLAYER.HIGHEST then
+                StartingPlayer = HighestPlayer and HighestPlayer or math.random(1, #seatedPlayers)
+            elseif GameOptions.NextRoundPlayer == CONFIG.NEXT_PLAYER.LOWEST then
+                StartingPlayer = LowestPlayer and LowestPlayer or math.random(1, #seatedPlayers)
+            end
         end
+
+        if StartingPlayer > #seatedPlayers then StartingPlayer = 1 end
+        if StartingPlayer < 1 then StartingPlayer = #seatedPlayers end
 
         local player = Player[seatedPlayers[StartingPlayer]]
         CreateTokenForPlayer(player.color, NextPlayerBag)
@@ -893,7 +910,7 @@ end
 
 function UpdateScoreBoard()
     local activePlayers = {}
-    for _, color in pairs(PLAYER_COLORS) do
+    for i, color in ipairs(getSeatedPlayers()) do
         if Player[color].seated then
             local roundScore = Score[color] or 0
             local gameScore = GetTotalScore(color)
@@ -909,6 +926,7 @@ function UpdateScoreBoard()
             end
 
             table.insert(activePlayers, {
+                index = i,
                 name = {text = " " .. Player[color].steam_name, color = textColor},
                 round = {text = roundScore, color = textColor},
                 game = {text = gameScore, color = textColor},
@@ -918,6 +936,8 @@ function UpdateScoreBoard()
     end
 
     table.sort(activePlayers, function(a, b) return a.total.text > b.total.text end)
+    HighestPlayer = activePlayers[1].index
+    LowestPlayer = activePlayers[#activePlayers].index
 
     UI.setAttribute("table", "height", 40 + (#activePlayers * 24))
     for i, player in ipairs(activePlayers) do
@@ -989,8 +1009,10 @@ function CreateTokenForPlayer(color, bag)
         playerData.token = token
     end
 
-    --local newColor = Color.fromString(color):lerp(Color.White, 0.3)
-    token.setColorTint(TOKEN_COLORS[color])
+    if GameOptions.ColoredTokens then
+        --local newColor = Color.fromString(color):lerp(Color.White, 0.3)
+        token.setColorTint(TOKEN_COLORS[color])
+    end
 
     Wait.time(function() token.lock() end, 1, 1)
 end
@@ -1034,10 +1056,8 @@ function PrintDebugLogs()
     printToColor(JSON.encode_pretty(flags), "White")
 end
 
---- ActionBlocker
-
+--- Action Card Blocker
 ActionBlocker = {}
-ActionBlocker.enabled = true
 
 function ActionBlocker.reset()
     ActionBlocker.cards = {}
@@ -1049,7 +1069,7 @@ function ActionBlocker.add(color, object)
 end
 
 function ActionBlocker.isBlocked(color)
-    if not ActionBlocker.enabled then return false end
+    if not GameOptions.ActionBlocker then return false end
     if not color then return #ActionBlocker.cards > 0 end
     for _, card in pairs(ActionBlocker.cards) do
         if card.by == color then
@@ -1059,7 +1079,7 @@ function ActionBlocker.isBlocked(color)
 end
 
 function ActionBlocker.isPermitted(color)
-    if not ActionBlocker.enabled then return true end
+    if not GameOptions.ActionBlocker then return true end
     if not ActionBlocker.isBlocked() then return true end
 
     local card = ActionBlocker.get()

@@ -32,13 +32,13 @@ DeckModes = {
 }
 
 -- Globals
-
 PlayerData = {}
 GameOptions = {}
 NextPlayerStartToken = nil
 AutostartTimer = nil
 DebugTimer = nil
 WaitForNewRound = true
+Flip7Reached = false
 BrutalScoreDecision = {active = false, by = ""}
 GameOptions = {}
 LastButtonHit = os.time()
@@ -317,7 +317,7 @@ function ResetGame(_, color, _)
     end
 
     drawDeck.shuffle()
-    WaitForNewRound, AutostartCanceled = false, false
+    WaitForNewRound, AutostartCanceled, Flip7Reached = false, false, false
     ShiftStartingPlayer(true)
 end
 
@@ -468,7 +468,7 @@ function NewRound()
         BrutalScoreDecision.active = false
     end
 
-    WaitForNewRound, AutostartCanceled = false, false
+    WaitForNewRound, AutostartCanceled, Flip7Reached = false, false, false
     ShiftStartingPlayer()
     ActionBlocker.reset()
     HitBtn.call("AutostartCancel", false)
@@ -645,12 +645,17 @@ function CountItems()
                     end
                 end
             else
+                if not Flip7Reached then
+                    Flip7Reached = color
+                    broadcastToAll(("%s has 7 cards and ends the round"):format(Player[color].steam_name or color))
+                end
                 score = score + 15
-                broadcastToAll(("%s has 7 cards and ends the round"):format(Player[color].steam_name or color))
                 if GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.FLIP7 then
                     AutostartNextRound()
                 end
             end
+        else
+            if Flip7Reached == color then Flip7Reached = false end
         end
 
         if hasTheZero and numbercardCount < 7 then score = 0 end
@@ -684,6 +689,7 @@ function Bust(object, color, alt)
     if alt then return end
     if WaitForNewRound then return end
     if os.time() - LastButtonHit < 0.5 then return end
+    if Flip7Reached then return broadcastToColor(MSG_WAIT_ROUND, color) end
     if not ActionBlocker.isPermitted(color) then return ActionBlocker.HighlightCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
     LastButtonHit = os.time()
@@ -708,6 +714,7 @@ function Stay(object, color, alt)
     if WaitForNewRound then return end
     if HasBeenPewd then return end
     if os.time() - LastButtonHit < 0.5 then return end
+    if Flip7Reached then return broadcastToColor(MSG_WAIT_ROUND, color) end
     if not ActionBlocker.isPermitted(color) then return ActionBlocker.HighlightCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
     if PlayerHasCard(color, "zero") and not PlayerHasCard(color, "action", {"Freeze", "OneMore"}) then return broadcastToColor("You've gotten THE ZERO!", color) end
@@ -727,6 +734,7 @@ function Hit(object, color, alt)
     if WaitForNewRound then return end
     if HasBeenPewd then return end
     if os.time() - LastButtonHit < 0.5 then return end
+    if Flip7Reached then return broadcastToColor(MSG_WAIT_ROUND, color) end
     if not ActionBlocker.isPermitted(color) then return ActionBlocker.HighlightCard(color) end
     if IsPlayerDoneWithRound(color) then return broadcastToColor(MSG_WAIT_ROUND, color) end
     LastButtonHit = os.time()
@@ -882,6 +890,7 @@ function ResetPlayerCards(color, filterFunc, smooth)
 end
 
 function AllPlayersDone()
+    if Flip7Reached then return true end
     for color in pairs(PlayerData) do
         if Player[color].seated and not IsPlayerDoneWithRound(color) then return false end
     end

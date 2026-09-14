@@ -319,6 +319,7 @@ function ResetGame(_, color, _)
     drawDeck.shuffle()
     WaitForNewRound, AutostartCanceled, Flip7Reached = false, false, false
     ShiftStartingPlayer(true)
+    ActionBlocker.reset()
 end
 
 function ModeSelUp()

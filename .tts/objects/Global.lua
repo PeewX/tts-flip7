@@ -507,11 +507,11 @@ function UnbundleObjects(objects)
 
     for _, object in pairs(objects) do
         if object.type == "Card" then
-            table.insert(unbundledObjects, {src = object, is_face_down = object.is_face_down, tagSet = GenTagSet(object.getTags(), true), description = object.getDescription()})
+            table.insert(unbundledObjects, {src = object, is_face_down = object.is_face_down, held_by_color = object.held_by_color, tagSet = GenTagSet(object.getTags(), true), description = object.getDescription()})
         elseif object.type == "Deck" then
             for _, element in pairs(object.getObjects() or {}) do
                 -- In a deck you don't actually get an object, just metadata
-                table.insert(unbundledObjects, {src = object, is_face_down = object.is_face_down, tagSet = GenTagSet(element.tags, true), description = element.description})
+                table.insert(unbundledObjects, {src = object, is_face_down = object.is_face_down, held_by_color = object.held_by_color, tagSet = GenTagSet(element.tags, true), description = element.description})
             end
         end
     end
@@ -610,6 +610,9 @@ function CountItems()
                         end
                     end
                 end
+
+                -- only update numbercardCount when card has been dropped to not trigger any win conditions
+                if object.held_by_color then goto continue end
 
                 numbercardCount = numbercardCount + 1
 

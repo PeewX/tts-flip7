@@ -1099,7 +1099,7 @@ function ActionBlocker.reset()
 end
 
 function ActionBlocker.add(color, object)
-    local new = {by = color, src = object}
+    local new = {by = color, src = object.guid}
     table.insert(ActionBlocker.cards, new)
 end
 
@@ -1129,7 +1129,7 @@ end
 
 function ActionBlocker.isAny(object)
     for _, card in pairs(ActionBlocker.cards) do
-        if card.src == object then
+        if card.src == object.guid then
             return true
         end
     end
@@ -1137,7 +1137,7 @@ end
 
 function ActionBlocker.update(object, color)
     for _, card in pairs(ActionBlocker.cards) do
-        if card.src == object then
+        if card.src == object.guid then
             card.by = color
         end
     end
@@ -1145,7 +1145,7 @@ end
 
 function ActionBlocker.discard(object)
     for i, card in ipairs(ActionBlocker.cards) do
-        if card.src == object then
+        if card.src == object.guid then
             return table.remove(ActionBlocker.cards, i)
         end
     end
@@ -1162,8 +1162,8 @@ end
 
 function ActionBlocker.HighlightCard(fromColor)
     if not ActionBlocker.isBlocked() then return end
-    local actionCard = ActionBlocker.get().src
-    if IsObject(actionCard) then
+    local actionCard = getObjectFromGUID(ActionBlocker.get().src)
+    if actionCard then
         if Player[fromColor].seated then Player[fromColor].pingTable(actionCard.getPosition()) end
         actionCard.highlightOn("Red", 3)
     end

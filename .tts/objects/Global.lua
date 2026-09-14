@@ -1132,24 +1132,42 @@ end
 
 function ActionBlocker.isAny(object)
     for _, card in pairs(ActionBlocker.cards) do
-        if card.src == object.guid then
+        if object.type == "Card" and card.src == object.guid then
             return true
+        elseif object.type == "Deck" then
+            for _, element in pairs(object.getObjects() or {}) do
+                if card.src == element.guid then
+                    return true
+                end
+            end
         end
     end
 end
 
 function ActionBlocker.update(object, color)
     for _, card in pairs(ActionBlocker.cards) do
-        if card.src == object.guid then
+        if object.type == "Card" and card.src == object.guid then
             card.by = color
+        elseif object.type == "Deck" then
+            for _, element in pairs(object.getObjects() or {}) do
+                if card.src == element.guid then
+                    card.by = color
+                end
+            end
         end
     end
 end
 
 function ActionBlocker.discard(object)
     for i, card in ipairs(ActionBlocker.cards) do
-        if card.src == object.guid then
+        if object.type == "Card" and card.src == object.guid then
             return table.remove(ActionBlocker.cards, i)
+        elseif object.type == "Deck" then
+            for _, element in pairs(object.getObjects() or {}) do
+                if card.src == element.guid then
+                    return table.remove(ActionBlocker.cards, i)
+                end
+            end
         end
     end
 end
@@ -1166,7 +1184,7 @@ end
 function ActionBlocker.HighlightCard(fromColor)
     if not ActionBlocker.isBlocked() then return end
     local actionCard = getObjectFromGUID(ActionBlocker.get().src)
-    if actionCard then
+    if IsObject(actionCard) then
         if Player[fromColor].seated then Player[fromColor].pingTable(actionCard.getPosition()) end
         actionCard.highlightOn("Red", 3)
     end

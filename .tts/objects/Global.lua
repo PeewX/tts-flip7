@@ -1130,44 +1130,38 @@ function ActionBlocker.get()
     return ActionBlocker.cards[1]
 end
 
+function ActionBlocker.contains(object, guid)
+    if object.type == "Card" then
+        return object.guid == guid
+    elseif object.type == "Deck" then
+        for _, element in pairs(object.getObjects() or {}) do
+            if element.guid == guid then
+                return true
+            end
+        end
+    end
+end
+
 function ActionBlocker.isAny(object)
     for _, card in pairs(ActionBlocker.cards) do
-        if object.type == "Card" and card.src == object.guid then
+        if ActionBlocker.contains(object, card.src) then
             return true
-        elseif object.type == "Deck" then
-            for _, element in pairs(object.getObjects() or {}) do
-                if card.src == element.guid then
-                    return true
-                end
-            end
         end
     end
 end
 
 function ActionBlocker.update(object, color)
     for _, card in pairs(ActionBlocker.cards) do
-        if object.type == "Card" and card.src == object.guid then
+        if ActionBlocker.contains(object, card.src) then
             card.by = color
-        elseif object.type == "Deck" then
-            for _, element in pairs(object.getObjects() or {}) do
-                if card.src == element.guid then
-                    card.by = color
-                end
-            end
         end
     end
 end
 
 function ActionBlocker.discard(object)
     for i, card in ipairs(ActionBlocker.cards) do
-        if object.type == "Card" and card.src == object.guid then
+        if ActionBlocker.contains(object, card.src) then
             return table.remove(ActionBlocker.cards, i)
-        elseif object.type == "Deck" then
-            for _, element in pairs(object.getObjects() or {}) do
-                if card.src == element.guid then
-                    return table.remove(ActionBlocker.cards, i)
-                end
-            end
         end
     end
 end

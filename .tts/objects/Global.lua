@@ -152,6 +152,16 @@ function onObjectLeaveZone(zone, object)
     end
 end
 
+function onObjectEnterContainer(container, object)
+    if not IsObject(object) then return end
+    if object.type ~= "Card" and object.type ~= "Deck" then return end
+    for _, card in pairs(ActionBlocker.cards) do
+        if ActionBlocker.contains(object, card.src) then
+            card.inDeck = container
+        end
+    end
+end
+
 function onLoad()
     InitPlayerData()
     InitButtonsAndObjects()
@@ -1177,7 +1187,7 @@ end
 
 function ActionBlocker.HighlightCard(fromColor)
     if not ActionBlocker.isBlocked() then return end
-    local actionCard = getObjectFromGUID(ActionBlocker.get().src)
+    local actionCard = getObjectFromGUID(ActionBlocker.get().src) or ActionBlocker.get().inDeck
     if IsObject(actionCard) then
         if Player[fromColor].seated then Player[fromColor].pingTable(actionCard.getPosition()) end
         actionCard.highlightOn("Red", 3)

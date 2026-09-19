@@ -42,6 +42,9 @@ Flip7Reached = false
 BrutalScoreDecision = {active = false, by = ""}
 GameOptions = {}
 LastButtonHit = os.time()
+GameStarted = false
+Loaded = false
+SAVE_VERSION = 1
 
 function UpdateGameOptions(options)
     GameOptions = options
@@ -162,7 +165,9 @@ function onObjectEnterContainer(container, object)
     end
 end
 
-function onLoad()
+function onLoad(savedData)
+    local state = DecodeSavedState(savedData)
+
     InitPlayerData()
     InitButtonsAndObjects()
     ActionBlocker.reset()
@@ -171,11 +176,19 @@ function onLoad()
     IsBrutal = false -- only available in vengeance mode
     HasBeenPewd = false
     StartingPlayer = -1
+    GameStarted = false
 
-    -- Init deck with base game
     DeckMode = DeckModes.Base
-    Deck2 = GetDrawPile()
-    SetModeSelection()
+    if state then
+        -- Rewind or reload mid-game. Cards and tiles come back from the snapshot.
+        local ok, err = pcall(RestoreState, state)
+        if not ok then printToAll(("Restoring game state failed: %s"):format(tostring(err)), {1, 0.4, 0.4}) end
+    else
+        -- Init deck with base game
+        BuildGamemodeSelection()
+        Deck2 = GetDrawPile()
+        SetModeSelection()
+    end
 
     local hotKeyFunctions = {"Hit", "Stay", "Bust"}
     for _, func in pairs(hotKeyFunctions) do
@@ -183,6 +196,131 @@ function onLoad()
     end
 
     Wait.time(CountItems, 0.5, -1)
+    Loaded = true
+end
+
+function onSave()
+    if not Loaded then return "" end
+
+    local players = {}
+    for color, data in pairs(PlayerData) do
+        players[color] = {
+            status = data.status,
+            resetState = data.resetState,
+            tokenReset = data.tokenReset,
+            cardCount = data.cardCount,
+            token = IsObject(data.token) and data.token.guid or nil,
+            tokenLabel = data.tokenLabel,
+            gameScore = GetTotalScore(color)
+        }
+    end
+
+    -- inDeck holds an object reference. Rebuilt on load.
+    local blockerCards = {}
+    for _, card in ipairs(ActionBlocker.cards) do
+        table.insert(blockerCards, {by = card.by, src = card.src})
+    end
+
+    return JSON.encode({
+        version = SAVE_VERSION,
+        started = GameStarted,
+        deckMode = DeckMode,
+        isBrutal = IsBrutal,
+        startingPlayer = StartingPlayer,
+        hasBeenPewd = HasBeenPewd,
+        flip7Reached = Flip7Reached,
+        autostartCanceled = AutostartCanceled or false,
+        brutalScoreDecision = BrutalScoreDecision,
+        highestPlayer = HighestPlayer,
+        lowestPlayer = LowestPlayer,
+        score = Score,
+        players = players,
+        nextPlayerToken = IsObject(NextPlayerStartToken) and NextPlayerStartToken.guid or nil,
+        actionBlocker = blockerCards,
+        gameOptions = GameOptions
+    })
+end
+
+function DecodeSavedState(savedData)
+    if type(savedData) ~= "string" or savedData == "" then return nil end
+    local ok, state = pcall(JSON.decode, savedData)
+    if not ok or type(state) ~= "table" or state.version ~= SAVE_VERSION then return nil end
+    return state
+end
+
+function RestoreState(state)
+    DeckMode = state.deckMode or DeckModes.Base
+    IsBrutal = state.isBrutal or false
+    GameStarted = state.started or false
+    StartingPlayer = state.startingPlayer or -1
+    HasBeenPewd = state.hasBeenPewd or false
+    Flip7Reached = state.flip7Reached or false
+    AutostartCanceled = state.autostartCanceled or false
+    BrutalScoreDecision = state.brutalScoreDecision or {active = false, by = ""}
+    HighestPlayer = state.highestPlayer
+    LowestPlayer = state.lowestPlayer
+    Score = state.score or {}
+    ActionBlocker.cards = state.actionBlocker or {}
+    ActionBlocker.findDecks()
+    Deck2 = GetDrawPile()
+
+    if next(GameOptions) == nil and type(state.gameOptions) == "table" then
+        GameOptions = state.gameOptions
+    end
+
+    NextPlayerStartToken = state.nextPlayerToken and getObjectFromGUID(state.nextPlayerToken) or nil
+
+    for color, saved in pairs(state.players or {}) do
+        local playerData = PlayerData[color]
+        if playerData then
+            playerData.status = saved.status or PlayerStatus.Active
+            playerData.resetState = saved.resetState or false
+            playerData.tokenReset = saved.tokenReset or false
+            playerData.cardCount = saved.cardCount
+            playerData.tokenLabel = saved.tokenLabel
+
+            local token = saved.token and getObjectFromGUID(saved.token) or nil
+            if IsObject(token) then
+                playerData.token = token
+                -- Context menu items do not survive a reload
+                token.clearContextMenu()
+                if playerData.tokenLabel then
+                    token.addContextMenuItem(("Unset %s Status"):format(playerData.tokenLabel), RemoveToken)
+                end
+            end
+        end
+    end
+
+    UpdateModeHeader()
+    if GameOptions.Scoreboard ~= nil then UI.setAttribute("table", "active", tostring(GameOptions.Scoreboard)) end
+
+    if not GameStarted then
+        BuildGamemodeSelection()
+        UpdateModeSelectionUI()
+        return
+    end
+
+    -- Buttons and inputs may not be part of the snapshot. Recreate only what is missing.
+    StartBtn.clearButtons()
+    WaitForNewRound = false
+
+    if #(HitBtn.getButtons() or {}) == 0 then HitBtn.call("CreateGameButtons") end
+    HitBtn.call("AutostartCancel", false)
+
+    local tilesMissing = false
+    for _, playerData in pairs(PlayerData) do
+        if #(playerData.scoreTile.getInputs() or {}) == 0 then tilesMissing = true end
+    end
+    if tilesMissing then
+        HitBtn.call("CreateScoreTileUI", {PlayerData, IsBrutal, Scale, Bound})
+        for color, saved in pairs(state.players or {}) do
+            if PlayerData[color] and saved.gameScore then
+                PlayerData[color].scoreTile.editInput({index = 0, value = saved.gameScore})
+            end
+        end
+    end
+
+    if BrutalScoreDecision.active then ShowBrutalDecisionButtons(BrutalScoreDecision.by) end
 end
 
 function InitPlayerData()
@@ -266,8 +404,6 @@ function InitButtonsAndObjects()
     Scale = StartBtn.getScale()
     Bound = StartBtn.getBoundsNormalized()
 
-    StartBtn.call("CreateGamemodeSelection")
-
     BaseBag = getObjectFromGUID("314599")
     ExpBag = getObjectFromGUID("ff1e2d")
     StayBag = getObjectFromGUID("5e7ab9")
@@ -285,11 +421,26 @@ function None() end
 function Brutal()
     if not DECK_INFO[DeckMode].Brutal then return end
     IsBrutal = not IsBrutal
-    StartBtn.editButton({index = 4, label = ("Brutal Mode [%s]"):format(IsBrutal and "✓" or " ")})
+    UpdateModeSelectionUI()
+end
+
+function BuildGamemodeSelection()
+    StartBtn.clearButtons()
+    StartBtn.call("CreateGamemodeSelection")
+end
+
+function UpdateModeHeader()
     UI.setAttribute("state", "text", ("%s%s"):format(DECK_INFO[DeckMode].Name, IsBrutal and " (Brutal)" or ""))
 end
 
+function UpdateModeSelectionUI()
+    StartBtn.editButton({index = 0, label = DECK_INFO[DeckMode].Name, tooltip = DECK_INFO[DeckMode].Tooltip})
+    StartBtn.editButton({index = 4, label = DECK_INFO[DeckMode].Brutal and ("Brutal Mode [%s]"):format(IsBrutal and "✓" or " ") or ""})
+    UpdateModeHeader()
+end
+
 function StartGame()
+    GameStarted = true
     StartBtn.clearButtons()
     HitBtn.call("CreateGameButtons")
     HitBtn.call("CreateScoreTileUI", {PlayerData, IsBrutal, Scale, Bound})
@@ -356,10 +507,7 @@ function SetModeSelection()
     end
 
     IsBrutal = false
-
-    StartBtn.editButton({index = 0, label = DECK_INFO[DeckMode].Name, tooltip = DECK_INFO[DeckMode].Tooltip})
-    StartBtn.editButton({index = 4, label = DECK_INFO[DeckMode].Brutal and "Brutal Mode [ ]" or ""})
-    UI.setAttribute("state", "text", ("%s%s"):format(DECK_INFO[DeckMode].Name, IsBrutal and " (Brutal)" or ""))
+    UpdateModeSelectionUI()
 
     Deck2.setPosition({-1.60, 2.1, 1.13})
     Deck2.setRotation({0, 180, 180})
@@ -546,6 +694,7 @@ end
 
 function CountItems()
     if WaitForNewRound then return end
+    if not CONFIG then return end
 
     local anyDuplicate = false
     for _, color in pairs(PLAYER_COLORS) do
@@ -646,17 +795,7 @@ function CountItems()
                 if not BrutalScoreDecision.active then
                     BrutalScoreDecision.active = true
                     BrutalScoreDecision.by = color
-                    for _, brutalPlayerColor in pairs(getSeatedPlayers()) do
-                        local buttonLabel = brutalPlayerColor == color and "+15" or "-15"
-                        local buttonColor = brutalPlayerColor == color and {0.6, 0.8, 0.6} or {0.8, 0.6, 0.6}
-
-                        PlayerData[brutalPlayerColor].scoreTile.editButton({index = 2,
-                            label = buttonLabel,
-                            color = buttonColor,
-                            width = 1500,
-                            height = 1040
-                        })
-                    end
+                    ShowBrutalDecisionButtons(color)
                 end
             else
                 if not Flip7Reached then
@@ -686,6 +825,20 @@ function CountItems()
 
     if GameOptions.Autostart == CONFIG.AUTOSTART.ALWAYS or GameOptions.Autostart == CONFIG.AUTOSTART.ROUND then
         if AllPlayersDone() then AutostartNextRound() end
+    end
+end
+
+function ShowBrutalDecisionButtons(byColor)
+    for _, brutalPlayerColor in pairs(getSeatedPlayers()) do
+        local buttonLabel = brutalPlayerColor == byColor and "+15" or "-15"
+        local buttonColor = brutalPlayerColor == byColor and {0.6, 0.8, 0.6} or {0.8, 0.6, 0.6}
+
+        PlayerData[brutalPlayerColor].scoreTile.editButton({index = 2,
+            label = buttonLabel,
+            color = buttonColor,
+            width = 1500,
+            height = 1040
+        })
     end
 end
 
@@ -1053,6 +1206,7 @@ function CreateTokenForPlayer(color, bag)
         NextPlayerStartToken = token
     else
         token.setGMNotes(color)
+        playerData.tokenLabel = bagDescription
         token.addContextMenuItem(("Unset %s Status"):format(bagDescription), RemoveToken)
         playerData.token = token
     end
@@ -1109,6 +1263,20 @@ ActionBlocker = {}
 
 function ActionBlocker.reset()
     ActionBlocker.cards = {}
+end
+
+-- Find decks holding action cards
+function ActionBlocker.findDecks()
+    for _, card in pairs(ActionBlocker.cards) do
+        if not getObjectFromGUID(card.src) then
+            for _, object in pairs(getObjects()) do
+                if object.type == "Deck" and ActionBlocker.contains(object, card.src) then
+                    card.inDeck = object
+                    break
+                end
+            end
+        end
+    end
 end
 
 function ActionBlocker.add(color, object)
